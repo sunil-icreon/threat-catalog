@@ -66,7 +66,6 @@ export default function Dashboard() {
   });
   const [showModal, setShowModal] = useState(false);
 
-  // Handle body scroll when modal opens/closes
   useEffect(() => {
     if (showModal) {
       document.body.style.overflow = "hidden";
