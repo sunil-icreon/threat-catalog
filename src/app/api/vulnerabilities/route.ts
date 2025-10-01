@@ -92,19 +92,27 @@ const analysePackageFile = async (
 
   const vulList = await findVulnerabilitiesInPackage(packageFileContent);
 
-  const fileName = `${packageFileContent.name}.json`;
-  // Create a path in server
-  const filePath = path.join(process.cwd(), "submitted_packages", fileName);
+  try {
+    const fileName = `${packageFileContent.name}.json`;
+    // Create a path in server
+    const filePath = path.join(
+      process.cwd(),
+      "/tmp/submitted_packages",
+      fileName
+    );
 
-  // Ensure folder exists
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    // Ensure folder exists
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
-  // Write content to file
-  fs.writeFileSync(
-    filePath,
-    JSON.stringify(JSON.stringify(packageFileContent)),
-    "utf-8"
-  );
+    // Write content to file
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify(JSON.stringify(packageFileContent)),
+      "utf-8"
+    );
+  } catch (e) {
+    console.log("Submitted file not created");
+  }
 
   return {
     ecosystem: packageFileContent.ecosystem,
@@ -115,42 +123,47 @@ const analysePackageFile = async (
 };
 
 const getSubmittedPackageVulnerabilities = async () => {
-  const folderPath = path.join(process.cwd(), "submitted_packages");
+  try {
+    const folderPath = path.join(process.cwd(), "/tmp/submitted_packages");
 
-  const files = fs.readdirSync(folderPath);
-  if (files.length === 0) {
+    const files = fs.readdirSync(folderPath);
+    if (files.length === 0) {
+      return [];
+    }
+
+    let listOfMatched: Array<IRecord> = [];
+    const vulnerabilityService = VulnerabilityService.getInstance();
+
+    files.forEach((file) => {
+      const filePath = path.join(folderPath, file);
+      let content: any = fs.readFileSync(filePath, "utf8");
+
+      if (content) {
+        content = content.replace(/^\uFEFF/, "").trim();
+        const JSONContent = JSON.parse(JSON.parse(content));
+        const { name, version, ecosystem, packages } = JSONContent;
+
+        const matchedVuls =
+          vulnerabilityService.returnVulnerabilitiesForPackages(packages);
+
+        if (matchedVuls.length > 0) {
+          listOfMatched = [
+            ...listOfMatched,
+            {
+              name,
+              version,
+              ecosystem,
+              matchedVuls
+            }
+          ];
+        }
+      }
+    });
+    return listOfMatched;
+  } catch (e) {
+    console.log("file reading failed");
     return [];
   }
-
-  let listOfMatched: Array<IRecord> = [];
-  const vulnerabilityService = VulnerabilityService.getInstance();
-
-  files.forEach((file) => {
-    const filePath = path.join(folderPath, file);
-    let content: any = fs.readFileSync(filePath, "utf8");
-
-    if (content) {
-      content = content.replace(/^\uFEFF/, "").trim();
-      const JSONContent = JSON.parse(JSON.parse(content));
-      const { name, version, ecosystem, packages } = JSONContent;
-
-      const matchedVuls =
-        vulnerabilityService.returnVulnerabilitiesForPackages(packages);
-
-      if (matchedVuls.length > 0) {
-        listOfMatched = [
-          ...listOfMatched,
-          {
-            name,
-            version,
-            ecosystem,
-            matchedVuls
-          }
-        ];
-      }
-    }
-  });
-  return listOfMatched;
 };
 
 export async function POST(request: NextRequest) {
