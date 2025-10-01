@@ -1,0 +1,37 @@
+{
+  "name": "vul-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3031",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "analyze": "ANALYZE=true npm run build",
+    "type-check": "tsc --noEmit",
+    "build:production": "NODE_ENV=production next build",
+    "start:production": "NODE_ENV=production next start"
+  },
+  "dependencies": {
+    "axios": "1.6.2",
+    "bootstrap": "5.3.2",
+    "google-auth-library": "10.3.0",
+    "linkedom": "0.18.12",
+    "next": "14.0.4",
+    "react": "18",
+    "react-bootstrap": "2.9.2",
+    "react-dom": "18",
+    "semver": "7.7.2",
+    "zustand": "5.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "20",
+    "@types/react": "18",
+    "@types/react-dom": "18",
+    "@types/semver": "^7.7.1",
+    "eslint": "8",
+    "eslint-config-next": "14.0.4",
+    "typescript": "5",
+    "webpack-bundle-analyzer": "4.10.1"
+  }
+}
