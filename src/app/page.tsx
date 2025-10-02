@@ -17,6 +17,8 @@ import {
 import Header from "../components/Header";
 import Modal from "../components/Modal";
 import StatsCards from "../components/StatsCards";
+import VulnerabilityDetailModal from "../components/VulnerabilityDetailModal";
+import VulnerabilityDetailSidebar from "../components/VulnerabilityDetailSidebar";
 import VulnerabilityDisplay from "../components/VulnerabilityDisplay";
 import VulnerabilityFiltersComponent from "../components/VulnerabilityFilters";
 import {
@@ -65,16 +67,23 @@ export default function Dashboard() {
     lastRefresh: new Date().toISOString()
   });
   const [showModal, setShowModal] = useState(false);
+  const [selectedVulnerability, setSelectedVulnerability] =
+    useState<IVulnerabilityType | null>(null);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showMobileModal, setShowMobileModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    if (showModal) {
+    if (showModal || showSidebar || showMobileModal) {
       document.body.style.overflow = "hidden";
       document.body.style.position = "fixed";
       document.body.style.width = "100%";
+      document.body.classList.add("sidebar-open");
     } else {
       document.body.style.overflow = "";
       document.body.style.position = "";
       document.body.style.width = "";
+      document.body.classList.remove("sidebar-open");
     }
 
     // Cleanup on unmount
@@ -82,18 +91,19 @@ export default function Dashboard() {
       document.body.style.overflow = "";
       document.body.style.position = "";
       document.body.style.width = "";
+      document.body.classList.remove("sidebar-open");
     };
-  }, [showModal]);
+  }, [showModal, showSidebar, showMobileModal]);
 
   const setDataInState = (data: any) => {
     setVulnerabilities(data.vulnerabilities);
     setFilteredVuls(() => data.vulnerabilities);
     setStats({
-      ecosystemStats: data.stats.ecosystem,
-      durationStats: data.stats.duration,
-      severityStats: data.stats.severity,
+      ecosystemStats: data.stats?.ecosystem,
+      durationStats: data.stats?.duration,
+      severityStats: data.stats?.severity,
       totalVulnerabilities: data.total,
-      lastRefresh: data.stats.lastRefresh
+      lastRefresh: data.stats?.lastRefresh
     });
   };
 
@@ -125,7 +135,7 @@ export default function Dashboard() {
         setDataInState(fromCache);
         setLoading(false);
         setRefreshing(false);
-        fetchSubmittedPackagesVulnerabilities();
+        // fetchSubmittedPackagesVulnerabilities();
         return;
       }
 
@@ -143,7 +153,7 @@ export default function Dashboard() {
       if (data.total > 0) {
         setDataInState(data);
         cacheManager.setItem(STORAGE_KEYS.VULNERABILITY_DATA, data);
-        fetchSubmittedPackagesVulnerabilities();
+        // fetchSubmittedPackagesVulnerabilities();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -223,6 +233,25 @@ export default function Dashboard() {
     setshowFetchLatestModal(() => true);
   };
 
+  const handleVulnerabilityClick = (vulnerability: IVulnerabilityType) => {
+    setSelectedVulnerability(() => vulnerability);
+    if (isMobile) {
+      setShowMobileModal(true);
+    } else {
+      setShowSidebar(true);
+    }
+  };
+
+  const handleCloseSidebar = () => {
+    setShowSidebar(false);
+    setSelectedVulnerability(null);
+  };
+
+  const handleCloseMobileModal = () => {
+    setShowMobileModal(false);
+    setSelectedVulnerability(null);
+  };
+
   const fetchLatestVulnerabilities = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiKeyError("");
@@ -258,7 +287,7 @@ export default function Dashboard() {
     setFetchingLatest(false);
     setshowFetchLatestModal(() => false);
 
-    if (vulListData) {
+    if (vulListData && vulListData.total > 0) {
       setDataInState(vulListData);
       cacheManager.setItem(STORAGE_KEYS.VULNERABILITY_DATA, vulListData);
     }
@@ -268,6 +297,25 @@ export default function Dashboard() {
     fetchVulnerabilities();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 992;
+      setIsMobile(mobile);
+
+      if (!mobile && showMobileModal) {
+        setShowMobileModal(false);
+      }
+      if (mobile && showSidebar) {
+        setShowSidebar(false);
+      }
+    };
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [showMobileModal, showSidebar]);
 
   return (
     <>
@@ -355,7 +403,10 @@ export default function Dashboard() {
                 </h2>
               </div>
 
-              <VulnerabilityDisplay vulnerabilities={filteredVuls} />
+              <VulnerabilityDisplay
+                vulnerabilities={filteredVuls}
+                onVulnerabilityClick={handleVulnerabilityClick}
+              />
             </div>
           )}
 
@@ -468,7 +519,6 @@ export default function Dashboard() {
                   <Col sm={12} lg={6}>
                     <Form.Label>Ecosystem</Form.Label>
                     <Form.Select
-                      value={filters.ecosystem}
                       onChange={(e) =>
                         handleLatestQueryFilterChange(
                           "ecosystem",
@@ -487,7 +537,6 @@ export default function Dashboard() {
                   <Col sm={12} lg={6}>
                     <Form.Label>Duration</Form.Label>
                     <Form.Select
-                      value={filters.ecosystem}
                       onChange={(e) =>
                         handleLatestQueryFilterChange(
                           "duration",
@@ -509,10 +558,10 @@ export default function Dashboard() {
                     <Form.Control
                       type='password'
                       placeholder='API Key...'
+                      value={latestQueryFilter.apiKey}
                       maxLength={50}
                       required
                       isInvalid={!!apiKeyError}
-                      value={filters.search}
                       onChange={(e) =>
                         handleLatestQueryFilterChange("apiKey", e.target.value)
                       }
@@ -529,7 +578,6 @@ export default function Dashboard() {
                       as='button'
                       type='submit'
                       className='btn btn-primary'
-                      onClick={fetchLatestVulnerabilities}
                     >
                       Fetch Latest
                     </Form.Control>
@@ -554,6 +602,22 @@ export default function Dashboard() {
             </>
           )}
         </Modal>
+      )}
+
+      {showSidebar && (
+        <VulnerabilityDetailSidebar
+          vulnerability={selectedVulnerability}
+          isOpen={showSidebar}
+          onClose={handleCloseSidebar}
+        />
+      )}
+
+      {showMobileModal && (
+        <VulnerabilityDetailModal
+          vulnerability={selectedVulnerability}
+          isOpen={showMobileModal}
+          onClose={handleCloseMobileModal}
+        />
       )}
     </>
   );

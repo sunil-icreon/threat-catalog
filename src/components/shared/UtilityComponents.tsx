@@ -8,12 +8,13 @@ import { severityVariants } from "../VulnerabilityCard";
 interface ICountPillProps {
   label: string | ReactNode;
   count: number | string;
-  variant: "critical" | "high" | "medium" | "low";
+  variant: "critical" | "high" | "medium" | "low" | "grey";
+  className?: string;
 }
 export const CountPill = (props: ICountPillProps) => {
-  const { label, count, variant } = props;
+  const { label, count, variant, className } = props;
   return (
-    <div className={`vul-pill vul-pill-${variant}`}>
+    <div className={`vul-pill vul-pill-${variant} ${className}`}>
       <div className='label'>{label}</div>
       <div className='value'>{count}</div>
     </div>
