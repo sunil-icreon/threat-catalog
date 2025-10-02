@@ -1,22 +1,27 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-
+import EcosystemMultiSelect from "@/components/EcosystemMultiSelect";
 import { GetEcosystemOptions } from "@/components/shared/UtilityComponents";
+import { useUrlParams } from "@/hooks/useUrlParams";
 import { useAppStore } from "@/lib/store";
 import { STORAGE_KEYS } from "@/utilities/constants";
 import { cacheManager } from "@/utilities/util";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import {
   Button,
   Col,
   Container,
   Form,
+  Modal,
   Row,
   Spinner,
   Toast,
   ToastContainer
 } from "react-bootstrap";
+import semver from "semver";
 import Header from "../components/Header";
-import Modal from "../components/Modal";
+
+import { ProjectInfo } from "@/components/PackageUploader";
 import StatsCards from "../components/StatsCards";
 import VulnerabilityDetailModal from "../components/VulnerabilityDetailModal";
 import VulnerabilityDetailSidebar from "../components/VulnerabilityDetailSidebar";
@@ -26,6 +31,8 @@ import {
   IEcoSystemType,
   IRecord,
   ISecerityType,
+  IStatCacheType,
+  IStatType,
   IVulnerabilityType,
   SeverityStats,
   VulnerabilityFilters,
@@ -37,7 +44,7 @@ export interface ILatestQueryFilterType {
   duration: "week" | "month" | "today";
   apiKey: string;
 }
-export default function Dashboard() {
+function DashboardContent() {
   const [vulnerabilities, setVulnerabilities] = useState<IVulnerabilityType[]>(
     []
   );
@@ -52,7 +59,12 @@ export default function Dashboard() {
       apiKey: ""
     });
 
-  const { setSubmittedProjectVuls } = useAppStore();
+  const {
+    selectedEcosystems,
+    setThreatFilter,
+    setSubmittedProjectVuls,
+    setSelectedEcosystems
+  } = useAppStore();
   const [filteredVuls, setFilteredVuls] = useState<IVulnerabilityType[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,7 +72,14 @@ export default function Dashboard() {
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [filters, setFilters] = useState<VulnerabilityFilters>({});
 
-  const [stats, setStats] = useState({
+  const {
+    getFiltersFromUrl,
+    getSelectedEcosystemsFromUrl,
+    updateUrl,
+    isInitialized
+  } = useUrlParams();
+
+  const [stats, setStats] = useState<IStatType>({
     ecosystemStats: {} as Record<string, number>,
     durationStats: {} as Record<string, IRecord>,
     severityStats: {} as SeverityStats,
@@ -96,47 +115,93 @@ export default function Dashboard() {
     };
   }, [showModal, showSidebar, showMobileModal]);
 
-  const setDataInState = (data: any) => {
-    setVulnerabilities(data.vulnerabilities);
-    setFilteredVuls(() => data.vulnerabilities);
-    setStats({
-      ecosystemStats: data.stats?.ecosystem,
-      durationStats: data.stats?.duration,
-      severityStats: data.stats?.severity,
-      totalVulnerabilities: data.total,
-      lastRefresh: data.stats?.lastRefresh
-    });
+  const setDataInState = (
+    vulnerabilities: Array<IVulnerabilityType>,
+    statData: IStatType | IStatCacheType
+  ) => {
+    setVulnerabilities(vulnerabilities);
+
+    // Filter vulnerabilities based on selected ecosystems
+    let filteredVulnerabilities = [...vulnerabilities];
+    if (selectedEcosystems.length > 0) {
+      filteredVulnerabilities = vulnerabilities.filter(
+        (vul: IVulnerabilityType) => selectedEcosystems.includes(vul.ecosystem)
+      );
+    }
+
+    setFilteredVuls(() => filteredVulnerabilities);
+
+    if ("ecosystemStats" in statData) {
+      setStats(statData);
+    } else {
+      setStats({
+        ecosystemStats: statData.ecosystem,
+        durationStats: statData.duration,
+        severityStats: statData.severity,
+        totalVulnerabilities: vulnerabilities.length,
+        lastRefresh: statData.lastRefresh
+      });
+    }
   };
 
   const fetchSubmittedPackagesVulnerabilities = async () => {
-    const response = await fetch(`/api/vulnerabilities`, {
-      method: "POST",
-      body: JSON.stringify({ action: "getSubmittedPackagesVulnerabilities" })
-    });
+    const lastAnalyzedProject: ProjectInfo | null = cacheManager.getItem(
+      STORAGE_KEYS.LAST_ANALYZED_PROJECT
+    );
 
-    if (!response.ok) {
-      setError("Failed to fetch vulnerabilities");
+    if (!lastAnalyzedProject) {
       return;
     }
 
-    let vulListData: Array<any> = await response.json();
-
-    if (vulListData && Array.isArray(vulListData) && vulListData.length > 0) {
-      setSubmittedProjectVuls(vulListData);
-      return;
+    const targetMap = new Map<string, any[]>();
+    for (const t of vulnerabilities) {
+      if (!targetMap.has(t.packageName)) targetMap.set(t.packageName, []);
+      targetMap.get(t.packageName)!.push(t);
     }
 
-    setSubmittedProjectVuls([]);
+    const matchedTargets: any[] = [];
+
+    for (const s of lastAnalyzedProject.packages) {
+      const targets = targetMap.get(s.name) ?? [];
+      for (const t of targets) {
+        if (semver.satisfies(s.version, t.version)) {
+          matchedTargets.push(t);
+        }
+      }
+    }
+
+    setSubmittedProjectVuls(matchedTargets);
+
+    // const response = await fetch(`/api/vulnerabilities`, {
+    //   method: "POST",
+    //   body: JSON.stringify({ action: "getSubmittedPackagesVulnerabilities" })
+    // });
+
+    // if (!response.ok) {
+    //   setError("Failed to fetch vulnerabilities");
+    //   return;
+    // }
+
+    // let vulListData: Array<any> = await response.json();
+
+    // if (vulListData && Array.isArray(vulListData) && vulListData.length > 0) {
+    //   setSubmittedProjectVuls(vulListData);
+    //   return;
+    // }
+
+    // setSubmittedProjectVuls([]);
   };
 
   const fetchVulnerabilities = async () => {
     try {
-      let fromCache = cacheManager.getItem(STORAGE_KEYS.VULNERABILITY_DATA);
+      let fromCache: any = cacheManager.getItem(
+        STORAGE_KEYS.VULNERABILITY_DATA
+      );
       if (fromCache) {
-        setDataInState(fromCache);
+        setDataInState(fromCache.vulnerabilities, fromCache.stats);
         setLoading(false);
         setRefreshing(false);
-        // fetchSubmittedPackagesVulnerabilities();
+        fetchSubmittedPackagesVulnerabilities();
         return;
       }
 
@@ -152,9 +217,9 @@ export default function Dashboard() {
       let data: VulnerabilityResponse = await response.json();
 
       if (data.total > 0) {
-        setDataInState(data);
+        setDataInState(data.vulnerabilities, data.stats);
         cacheManager.setItem(STORAGE_KEYS.VULNERABILITY_DATA, data);
-        // fetchSubmittedPackagesVulnerabilities();
+        fetchSubmittedPackagesVulnerabilities();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -169,58 +234,92 @@ export default function Dashboard() {
     fetchVulnerabilities();
   };
 
-  const handleFiltersChange = (newFilters: VulnerabilityFilters) => {
-    setFilters(newFilters);
+  // Internal filtering function that doesn't update URL
+  const applyFilters = useCallback(
+    (filtersToApply: VulnerabilityFilters, ecosystemsToApply: string[]) => {
+      let filteredVulnerabilities: Array<IVulnerabilityType> = vulnerabilities;
 
-    let filteredVulnerabilities: Array<IVulnerabilityType> = vulnerabilities;
-    // Apply filters
-    if (newFilters.ecosystem) {
-      filteredVulnerabilities = filteredVulnerabilities.filter(
-        (vul) => vul.ecosystem === newFilters.ecosystem
-      );
-    }
+      // Apply ecosystem filter first (based on selected ecosystems)
+      if (ecosystemsToApply.length > 0 && ecosystemsToApply.length < 3) {
+        filteredVulnerabilities = filteredVulnerabilities.filter((vul) =>
+          ecosystemsToApply.includes(vul.ecosystem)
+        );
+      }
 
-    if (newFilters.severity) {
-      filteredVulnerabilities = filteredVulnerabilities.filter(
-        (vul) => vul.severity === newFilters.severity
-      );
-    }
+      // Apply other filters
+      if (filtersToApply.ecosystem) {
+        filteredVulnerabilities = filteredVulnerabilities.filter(
+          (vul) => vul.ecosystem === filtersToApply.ecosystem
+        );
+      }
 
-    if (newFilters.status) {
-      filteredVulnerabilities = filteredVulnerabilities.filter(
-        (vul) => vul.status === newFilters.status
-      );
-    }
+      if (filtersToApply.severity) {
+        filteredVulnerabilities = filteredVulnerabilities.filter(
+          (vul) => vul.severity === filtersToApply.severity
+        );
+      }
 
-    if (newFilters.search) {
-      const searchTerm = newFilters.search.toLowerCase();
-      filteredVulnerabilities = filteredVulnerabilities.filter(
-        (vul) =>
-          vul.summary?.toLowerCase().includes(searchTerm) ||
-          vul.packageName.toLowerCase().includes(searchTerm) ||
-          vul.cveId?.toLowerCase().includes(searchTerm)
-      );
-    }
+      if (filtersToApply.status) {
+        filteredVulnerabilities = filteredVulnerabilities.filter(
+          (vul) => vul.status === filtersToApply.status
+        );
+      }
 
-    // Sort by severity (CRITICAL > HIGH > MEDIUM > LOW) and then by date
-    const severityOrder: Record<ISecerityType, number> = {
-      CRITICAL: 4,
-      HIGH: 3,
-      MEDIUM: 2,
-      LOW: 1
-    };
-    filteredVulnerabilities.sort((a, b) => {
-      const severityDiff =
-        severityOrder[b.severity] - severityOrder[a.severity];
-      if (severityDiff !== 0) return severityDiff;
-      return (
-        new Date(b.publishedDate).getTime() -
-        new Date(a.publishedDate).getTime()
-      );
-    });
+      if (filtersToApply.search) {
+        const searchTerm = filtersToApply.search.toLowerCase();
+        filteredVulnerabilities = filteredVulnerabilities.filter(
+          (vul) =>
+            vul.summary?.toLowerCase().includes(searchTerm) ||
+            vul.packageName.toLowerCase().includes(searchTerm) ||
+            vul.cveId?.toLowerCase().includes(searchTerm)
+        );
+      }
 
-    setFilteredVuls(() => [...filteredVulnerabilities]);
-  };
+      // Sort by severity (CRITICAL > HIGH > MEDIUM > LOW) and then by date
+      const severityOrder: Record<ISecerityType, number> = {
+        CRITICAL: 4,
+        HIGH: 3,
+        MEDIUM: 2,
+        LOW: 1
+      };
+      filteredVulnerabilities.sort((a, b) => {
+        const severityDiff =
+          severityOrder[b.severity] - severityOrder[a.severity];
+        if (severityDiff !== 0) return severityDiff;
+        return (
+          new Date(b.publishedDate).getTime() -
+          new Date(a.publishedDate).getTime()
+        );
+      });
+
+      setThreatFilter(filtersToApply);
+      setFilteredVuls(() => [...filteredVulnerabilities]);
+    },
+    [vulnerabilities]
+  );
+
+  const handleFiltersChange = useCallback(
+    (newFilters: VulnerabilityFilters) => {
+      setFilters(newFilters);
+
+      applyFilters(newFilters, selectedEcosystems);
+      // Update URL with current filters and selected ecosystems
+      updateUrl(newFilters, selectedEcosystems);
+    },
+    [selectedEcosystems, updateUrl, applyFilters]
+  );
+
+  const handleEcosystemsChange = useCallback(
+    (ecosystems: string[]) => {
+      setSelectedEcosystems(ecosystems);
+      // Apply filters with new ecosystem selection
+      applyFilters(filters, ecosystems);
+      // Update URL with new ecosystem selection
+      updateUrl(filters, ecosystems);
+      setThreatFilter(filters);
+    },
+    [filters, updateUrl, applyFilters]
+  );
 
   const handleLatestQueryFilterChange = (
     key: keyof ILatestQueryFilterType,
@@ -289,10 +388,29 @@ export default function Dashboard() {
     setshowFetchLatestModal(() => false);
 
     if (vulListData && vulListData.total > 0) {
-      setDataInState(vulListData);
+      setDataInState(vulListData.vulnerabilities, vulListData.stats);
       cacheManager.setItem(STORAGE_KEYS.VULNERABILITY_DATA, vulListData);
     }
   };
+
+  useEffect(() => {
+    if (isInitialized) {
+      const urlFilters = getFiltersFromUrl();
+      const urlEcosystems = getSelectedEcosystemsFromUrl();
+
+      setFilters(urlFilters);
+      setSelectedEcosystems(urlEcosystems);
+
+      applyFilters(urlFilters, urlEcosystems);
+      setThreatFilter(urlFilters);
+    }
+  }, [
+    isInitialized,
+    getFiltersFromUrl,
+    getSelectedEcosystemsFromUrl,
+    setSelectedEcosystems,
+    applyFilters
+  ]);
 
   useEffect(() => {
     fetchVulnerabilities();
@@ -324,17 +442,8 @@ export default function Dashboard() {
         <Header />
         <Container fluid className='py-4'>
           <div className='mb-1'>
-            <div className=''>
+            <div className='d-flex flex-wrap justify-content-between gap-1'>
               <div>
-                <Button
-                  variant='primary'
-                  className='d-flex align-items-center float-right'
-                  size='sm'
-                  onClick={handleShowFetchModal}
-                >
-                  <i className={`bi bi-gear me-2 `}></i>
-                  Fetch Latest
-                </Button>
                 <h3 className='fw-bold text-dark mb-0'>
                   Vulnerability Dashboard
                 </h3>
@@ -345,6 +454,21 @@ export default function Dashboard() {
                     <i className='bi bi-info-circle'></i>
                   </Button>
                 </p>
+              </div>
+              <div className='mb-3 d-flex align-items-center gap-2'>
+                <Button
+                  variant='primary'
+                  className='d-flex align-items-center  ms-2'
+                  size='sm'
+                  onClick={handleShowFetchModal}
+                >
+                  <i className={`bi bi-gear me-2 `}></i>
+                  Fetch Latest
+                </Button>
+
+                <EcosystemMultiSelect
+                  onEcosystemsChange={handleEcosystemsChange}
+                />
               </div>
             </div>
           </div>
@@ -357,15 +481,14 @@ export default function Dashboard() {
             lastUpdate={stats.lastRefresh}
             durationStats={stats.durationStats}
             vulnerabilities={vulnerabilities}
+            onVulnerabilityClick={handleVulnerabilityClick}
           />
-
           {/* Filters */}
           <VulnerabilityFiltersComponent
             onFiltersChange={handleFiltersChange}
             onRefresh={refreshCache}
             isLoading={refreshing}
           />
-
           {/* Error State */}
           <ToastContainer
             position='top-end'
@@ -386,7 +509,6 @@ export default function Dashboard() {
               </Toast.Body>
             </Toast>
           </ToastContainer>
-
           {/* Loading State */}
           {loading && filteredVuls?.length === 0 && (
             <div className='d-flex justify-content-center align-items-center text-center py-5'>
@@ -394,7 +516,6 @@ export default function Dashboard() {
               <span className='text-muted'>Loading vulnerabilities...</span>
             </div>
           )}
-
           {/* Vulnerabilities Display */}
           {!loading && filteredVuls?.length > 0 && (
             <div>
@@ -410,7 +531,6 @@ export default function Dashboard() {
               />
             </div>
           )}
-
           {/* Empty State */}
           {!loading && filteredVuls?.length === 0 && !error && (
             <div className='text-center py-5'>
@@ -438,69 +558,75 @@ export default function Dashboard() {
           size='lg'
           fullscreen='md-down'
         >
-          <div>
-            <h5 className='mb-3 d-flex align-items-center'>
+          <Modal.Header closeButton>
+            <Modal.Title>
               <i className='bi bi-shield-check text-primary me-2'></i>
               About This Dashboard
-            </h5>
-            <p className='mb-4 text-muted'>
-              This vulnerability dashboard provides monitoring of security
-              vulnerabilities identified recently across multiple package
-              ecosystems including NPM, Maven, and NuGet.
-            </p>
-            <div className='row g-3'>
-              <div className='col-12 col-md-6'>
-                <div className='card border-0 bg-light'>
-                  <div className='card-body p-3'>
-                    <h6 className='text-primary mb-3'>
-                      <i className='bi bi-star me-2'></i>Features
-                    </h6>
-                    <ul className='list-unstyled mb-0'>
-                      <li className='mb-2'>
-                        <i className='bi bi-check-circle text-success me-2'></i>
-                        Recent vulnerability data
-                      </li>
-                      <li className='mb-2'>
-                        <i className='bi bi-check-circle text-success me-2'></i>
-                        Multi-ecosystem support
-                      </li>
-                      <li className='mb-2'>
-                        <i className='bi bi-check-circle text-success me-2'></i>
-                        Advanced filtering
-                      </li>
-                      <li className='mb-0'>
-                        <i className='bi bi-check-circle text-success me-2'></i>
-                        Statistics overview
-                      </li>
-                    </ul>
+            </Modal.Title>
+          </Modal.Header>
+
+          <Modal.Body>
+            <div className='mb-3'>
+              <h5 className='mb-3 d-flex align-items-center'></h5>
+              <p className='mb-4 text-muted'>
+                This vulnerability dashboard provides monitoring of security
+                vulnerabilities identified recently across multiple package
+                ecosystems including NPM, Maven, and NuGet.
+              </p>
+              <div className='row g-3'>
+                <div className='col-12 col-md-6'>
+                  <div className='card border-0 bg-light'>
+                    <div className='card-body p-3'>
+                      <h6 className='text-primary mb-3'>
+                        <i className='bi bi-star me-2'></i>Features
+                      </h6>
+                      <ul className='list-unstyled mb-0'>
+                        <li className='mb-2'>
+                          <i className='bi bi-check-circle text-success me-2'></i>
+                          Recent vulnerability data
+                        </li>
+                        <li className='mb-2'>
+                          <i className='bi bi-check-circle text-success me-2'></i>
+                          Multi-ecosystem support
+                        </li>
+                        <li className='mb-2'>
+                          <i className='bi bi-check-circle text-success me-2'></i>
+                          Advanced filtering
+                        </li>
+                        <li className='mb-0'>
+                          <i className='bi bi-check-circle text-success me-2'></i>
+                          Statistics overview
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className='col-12 col-md-6'>
-                <div className='card border-0 bg-light'>
-                  <div className='card-body p-3'>
-                    <h6 className='text-primary mb-3'>
-                      <i className='bi bi-box me-2'></i>Ecosystems
-                    </h6>
-                    <ul className='list-unstyled mb-0'>
-                      <li className='mb-2'>
-                        <i className='bi bi-box text-warning me-2'></i>
-                        NPM (Node.js)
-                      </li>
-                      <li className='mb-2'>
-                        <i className='bi bi-box text-warning me-2'></i>
-                        Maven (Java)
-                      </li>
-                      <li className='mb-0'>
-                        <i className='bi bi-box text-warning me-2'></i>
-                        NuGet (.NET)
-                      </li>
-                    </ul>
+                <div className='col-12 col-md-6'>
+                  <div className='card border-0 bg-light'>
+                    <div className='card-body p-3'>
+                      <h6 className='text-primary mb-3'>
+                        <i className='bi bi-box me-2'></i>Ecosystems
+                      </h6>
+                      <ul className='list-unstyled mb-0'>
+                        <li className='mb-2'>
+                          <i className='bi bi-box text-warning me-2'></i>
+                          NPM (Node.js)
+                        </li>
+                        <li className='mb-2'>
+                          <i className='bi bi-box text-warning me-2'></i>
+                          Maven (Java)
+                        </li>
+                        <li className='mb-0'>
+                          <i className='bi bi-box text-warning me-2'></i>
+                          NuGet (.NET)
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Modal.Body>
         </Modal>
       )}
 
@@ -509,96 +635,105 @@ export default function Dashboard() {
           show={true}
           onHide={() => setshowFetchLatestModal(false)}
           title='Fetch Latest Vulnerabilities'
-          size='sm'
+          size='lg'
           fullscreen='md-down'
-          className='modal-fetch-vul'
         >
-          <div>
-            <Form noValidate onSubmit={fetchLatestVulnerabilities}>
-              <Form.Group controlId='exampleInput'>
-                <Row className='g-3'>
-                  <Col sm={12} lg={6}>
-                    <Form.Label>Ecosystem</Form.Label>
-                    <Form.Select
-                      defaultValue='npm'
-                      onChange={(e) =>
-                        handleLatestQueryFilterChange(
-                          "ecosystem",
-                          e.target.value
-                        )
-                      }
-                    >
-                      <GetEcosystemOptions />
-                    </Form.Select>
-                  </Col>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              <i className='bi bi-gear me-2'></i>
+              Fetch Latest Vulnerabilities
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className='border rounded p-3'>
+              <Form noValidate onSubmit={fetchLatestVulnerabilities}>
+                <Form.Group controlId='exampleInput'>
+                  <Row className='g-3'>
+                    <Col sm={12} lg={6}>
+                      <Form.Label>Ecosystem</Form.Label>
+                      <Form.Select
+                        defaultValue='npm'
+                        onChange={(e) =>
+                          handleLatestQueryFilterChange(
+                            "ecosystem",
+                            e.target.value
+                          )
+                        }
+                      >
+                        <GetEcosystemOptions />
+                      </Form.Select>
+                    </Col>
 
-                  <Col sm={12} lg={6}>
-                    <Form.Label>Duration</Form.Label>
-                    <Form.Select
-                      onChange={(e) =>
-                        handleLatestQueryFilterChange(
-                          "duration",
-                          e.target.value
-                        )
-                      }
-                    >
-                      <option value='week' selected>
-                        Last Week
-                      </option>
-                      <option value='month'>Last Month</option>
-                      <option value='today'>Today</option>
-                    </Form.Select>
-                  </Col>
-                </Row>
-                <Row className='mt-3 mb-3'>
-                  <Col sm={12} lg={6}>
-                    <Form.Label>API Key</Form.Label>
-                    <Form.Control
-                      type='password'
-                      placeholder='API Key...'
-                      value={latestQueryFilter.apiKey}
-                      maxLength={50}
-                      required
-                      isInvalid={!!apiKeyError}
-                      onChange={(e) =>
-                        handleLatestQueryFilterChange("apiKey", e.target.value)
-                      }
-                    />
+                    <Col sm={12} lg={6}>
+                      <Form.Label>Duration</Form.Label>
+                      <Form.Select
+                        defaultValue='week'
+                        onChange={(e) =>
+                          handleLatestQueryFilterChange(
+                            "duration",
+                            e.target.value
+                          )
+                        }
+                      >
+                        <option value='week'>Last Week</option>
+                        <option value='month'>Last Month</option>
+                        <option value='today'>Today</option>
+                      </Form.Select>
+                    </Col>
+                  </Row>
+                  <Row className='mt-3 mb-3'>
+                    <Col sm={12} lg={6}>
+                      <Form.Label>API Key</Form.Label>
+                      <Form.Control
+                        type='password'
+                        placeholder='API Key...'
+                        value={latestQueryFilter.apiKey}
+                        maxLength={50}
+                        required
+                        isInvalid={!!apiKeyError}
+                        onChange={(e) =>
+                          handleLatestQueryFilterChange(
+                            "apiKey",
+                            e.target.value
+                          )
+                        }
+                      />
 
-                    <Form.Control.Feedback type='invalid'>
-                      {apiKeyError}
-                    </Form.Control.Feedback>
-                  </Col>
+                      <Form.Control.Feedback type='invalid'>
+                        {apiKeyError}
+                      </Form.Control.Feedback>
+                    </Col>
 
-                  <Col sm={12} lg={6}>
-                    <Form.Label>&nbsp;</Form.Label>
-                    <Form.Control
-                      as='button'
-                      type='submit'
-                      className='btn btn-primary'
-                    >
-                      Fetch Latest
-                    </Form.Control>
-                  </Col>
-                </Row>
-              </Form.Group>
-            </Form>
-          </div>
+                    <Col sm={12} lg={6}>
+                      <Form.Label>&nbsp;</Form.Label>
+                      <Form.Control
+                        as='button'
+                        type='submit'
+                        className='btn btn-primary'
+                      >
+                        Fetch Latest
+                      </Form.Control>
+                    </Col>
+                  </Row>
+                </Form.Group>
+              </Form>
+            </div>
 
-          {fetchingLatest && (
-            <>
-              <div className='text-center py-5'>
-                <Spinner
-                  animation='border'
-                  variant='primary'
-                  className='me-2'
-                />
-                <span className='text-muted'>
-                  Fetchig live vulnerabilities, this may take few minutes...
-                </span>
-              </div>
-            </>
-          )}
+            {fetchingLatest && (
+              <>
+                <div className='text-center py-5'>
+                  <Spinner
+                    animation='border'
+                    variant='primary'
+                    className='me-2'
+                  />
+                  <span className='text-muted'>
+                    Fetchig live vulnerabilities, this may take few minutes...
+                  </span>
+                </div>
+              </>
+            )}
+          </Modal.Body>
         </Modal>
       )}
 
@@ -618,5 +753,13 @@ export default function Dashboard() {
         />
       )}
     </>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

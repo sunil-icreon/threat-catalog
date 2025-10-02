@@ -1,4 +1,4 @@
-import { ISubmittedProjectVulType, useAppStore } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import {
   IEcoSystemType,
   IRecord,
@@ -6,16 +6,19 @@ import {
   SeverityStats,
   VulnerabilityFilters
 } from "@/types/vulnerability";
-import { ECOSYSTEM_NAME } from "@/utilities/constants";
+import { ECOSYSTEM_NAME, STORAGE_KEYS } from "@/utilities/constants";
 import {
-  EPSSData,
+  cacheManager,
   formatRelativeTime,
   sortedObjectByKey
 } from "@/utilities/util";
+import { useRouter } from "next/navigation";
 import { memo, useMemo } from "react";
-import { Badge, Card, Col, Row, Table } from "react-bootstrap";
-import { RenderEPSS, SeverityCount } from "./shared/UtilityComponents";
-import { severityVariants } from "./VulnerabilityCard";
+import { Card, Col, Row } from "react-bootstrap";
+import semver from "semver";
+import { ProjectInfo } from "./PackageUploader";
+import { CountPill, SeverityCount } from "./shared/UtilityComponents";
+import VulnerabilityDisplay from "./VulnerabilityDisplay";
 
 interface StatsCardsProps {
   ecosystemStats: Record<string, number>;
@@ -24,6 +27,7 @@ interface StatsCardsProps {
   totalVulnerabilities: number;
   lastUpdate: string;
   vulnerabilities: Array<IVulnerabilityType>;
+  onVulnerabilityClick?: (vulnerability: IVulnerabilityType) => void;
 }
 
 interface IRenderStatCardProps {
@@ -55,17 +59,24 @@ const RenderEcoSystemCards = memo(
     severityStats: SeverityStats;
   }) => {
     const { ecosystemStats, durationStats, severityStats } = props;
-
-    let sortedEcoSystemStat = sortedObjectByKey(ecosystemStats);
-
+    const router = useRouter();
     const { setThreatFilter } = useAppStore();
+
     const handleClick = (ecosystem: string) => {
       let newFilter: VulnerabilityFilters = {
         ecosystem: ecosystem
       };
 
       setThreatFilter(newFilter);
+
+      const params = new URLSearchParams(window.location.search);
+      params.set("ecosystem", ecosystem);
+      router.replace(`?${params.toString()}`, { scroll: false });
     };
+
+    const sortedEcoSystemStat = useMemo(() => {
+      return sortedObjectByKey(ecosystemStats);
+    }, [ecosystemStats]);
 
     return (
       <>
@@ -169,31 +180,64 @@ const RenderEcoSystemCards = memo(
 export default function StatsCards({
   ecosystemStats,
   severityStats,
-  totalVulnerabilities,
-  lastUpdate,
   durationStats,
-  vulnerabilities
+  totalVulnerabilities,
+  vulnerabilities,
+  onVulnerabilityClick
 }: StatsCardsProps) {
   const criticalStat = severityStats.CRITICAL;
   const highStat = severityStats.HIGH;
   const mediumStat = severityStats.MEDIUM;
   const lowStat = severityStats.LOW;
 
-  const { setThreatFilter, submittedProjectVuls } = useAppStore();
+  const { setThreatFilter } = useAppStore();
+  const router = useRouter();
+
   const handleClick = () => {
     setThreatFilter({});
+
+    router.replace("/", { scroll: false });
   };
 
   const { foundCount, foundVuls } = useMemo(() => {
-    const foundInProject = submittedProjectVuls.map(
-      (vul: ISubmittedProjectVulType) => vul
+    const lastAnalyzed: ProjectInfo | null = cacheManager.getItem(
+      STORAGE_KEYS.LAST_ANALYZED_PROJECT
     );
+    if (lastAnalyzed) {
+      const targetMap = new Map<string, any[]>();
+      for (const t of vulnerabilities) {
+        if (!targetMap.has(t.packageName)) targetMap.set(t.packageName, []);
+        targetMap.get(t.packageName)!.push(t);
+      }
+
+      const matchedTargets: any[] = [];
+
+      for (const s of lastAnalyzed.packages) {
+        const targets = targetMap.get(s.name) ?? [];
+        for (const t of targets) {
+          if (semver.satisfies(s.version, t.version)) {
+            matchedTargets.push(t);
+          }
+        }
+      }
+
+      if (matchedTargets.length > 0) {
+        return {
+          foundCount: matchedTargets.length,
+          foundVuls: {
+            name: lastAnalyzed.name,
+            version: lastAnalyzed.version,
+            matchedVuls: matchedTargets
+          }
+        };
+      }
+    }
 
     return {
-      foundCount: foundInProject.length,
-      foundVuls: foundInProject
+      foundCount: 0,
+      foundVuls: null
     };
-  }, [submittedProjectVuls]);
+  }, [vulnerabilities]);
 
   return (
     <Row className='g-4 mb-4'>
@@ -266,68 +310,34 @@ export default function StatsCards({
         severityStats={severityStats}
       />
 
-      {foundCount > 0 && (
+      {foundCount > 0 && foundVuls && (
         <Col md={12}>
           <Card className='custom-card vul-in-project-card'>
             <Card.Body>
               <div className='d-flex justify-content-between align-items-center mb-2'>
                 <div>
                   <h6 className='mb-1 text-danger'>
-                    Analyzed Packages Vulnerabilities ({foundCount})
+                    Vulnerabilities found in last analyzed package
                   </h6>
                 </div>
               </div>
 
               <div className='d-flex flex-column gap-1'>
-                <div className='table-responsive  rounded'>
-                  <Table striped size='sm' hover className='mb-0 table-hover'>
-                    <thead className='table-dark'>
-                      <tr>
-                        <th style={{ width: "200px" }}>Project Name</th>
-                        <th>Summary</th>
-                        <th style={{ width: "250px" }}>Package</th>
-                        <th style={{ width: "80px" }}>Severity</th>
-                        <th style={{ width: "80px" }}>EPSS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {foundVuls.map((proj: ISubmittedProjectVulType) => {
-                        return (
-                          <>
-                            {proj.matchedVuls.map((vul: IVulnerabilityType) => {
-                              return (
-                                <tr key={proj.name}>
-                                  <td rowSpan={proj.matchedVuls.length}>
-                                    <span className='text-muted small'>
-                                      {proj.name}
-                                    </span>
-                                  </td>
-                                  <td className='small'>{vul.summary}</td>
-                                  <td>{vul.packageName}</td>
+                <div className='d-flex gap-3 flex-wrap'>
+                  <CountPill
+                    count={foundVuls.name}
+                    label={<b>Project Name</b>}
+                    variant='grey'
+                  />
 
-                                  <td>
-                                    <Badge
-                                      bg={severityVariants[vul.severity]}
-                                      className='text-capitalize me-2 w-70-px severity-badge'
-                                    >
-                                      {vul.severity}
-                                    </Badge>
-                                  </td>
-                                  <td>
-                                    <RenderEPSS
-                                      epss={vul.epss as EPSSData}
-                                      displayType='table'
-                                    />
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
+                  <CountPill
+                    count={foundCount}
+                    label={<b>Vulnerabilities</b>}
+                    variant='grey'
+                  />
                 </div>
+
+                <VulnerabilityDisplay vulnerabilities={foundVuls.matchedVuls} />
               </div>
             </Card.Body>
           </Card>

@@ -92,27 +92,27 @@ const analysePackageFile = async (
 
   const vulList = await findVulnerabilitiesInPackage(packageFileContent);
 
-  try {
-    const fileName = `${packageFileContent.name}.json`;
-    // Create a path in server
-    const filePath = path.join(
-      process.cwd(),
-      "/tmp/submitted_packages",
-      fileName
-    );
+  // try {
+  //   const fileName = `${packageFileContent.name}.json`;
+  //   // Create a path in server
+  //   const filePath = path.join(
+  //     process.cwd(),
+  //     "/tmp/submitted_packages",
+  //     fileName
+  //   );
 
-    // Ensure folder exists
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  //   // Ensure folder exists
+  //   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
-    // Write content to file
-    fs.writeFileSync(
-      filePath,
-      JSON.stringify(JSON.stringify(packageFileContent)),
-      "utf-8"
-    );
-  } catch (e) {
-    console.log("Submitted file not created");
-  }
+  //   // Write content to file
+  //   fs.writeFileSync(
+  //     filePath,
+  //     JSON.stringify(JSON.stringify(packageFileContent)),
+  //     "utf-8"
+  //   );
+  // } catch (e) {
+  //   console.log("Submitted file not created");
+  // }
 
   return {
     ecosystem: packageFileContent.ecosystem,

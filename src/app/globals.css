@@ -234,9 +234,12 @@ body {
   font-size: 0.7em;
 }
 
+.b {
+  font-weight: bold;
+}
 .alt-link {
   color: #404040;
-  font-weight: bold;
+
   &:hover {
     color: #0d6efd;
   }
