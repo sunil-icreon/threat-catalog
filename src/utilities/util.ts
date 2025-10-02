@@ -1,5 +1,10 @@
-import { IRecord } from "@/types/vulnerability";
-import { CACHE_EXPIRY } from "./constants";
+import {
+  IRecord,
+  IStatType,
+  IVulnerabilityType,
+  SeverityStats
+} from "@/types/vulnerability";
+import { CACHE_EXPIRY, ECOSYSTEM_LIST } from "./constants";
 
 const keyPrefix = "tc_";
 export const parseFirestoreDocument = (doc: any): any => {
@@ -115,6 +120,10 @@ export const cacheManager = {
     }
   },
   getItem: <T = string>(key: string, defaultValue?: T): T | null => {
+    if (typeof window === "undefined") {
+      return defaultValue || null;
+    }
+
     key = `${keyPrefix}${key}`;
     const raw = window.localStorage.getItem(key);
 
@@ -214,4 +223,53 @@ export const sortedObjectByKey = (
     acc[key] = obj[key as keyof typeof obj];
     return acc;
   }, {} as Record<string, number>);
+};
+
+// Calculate stats from vulnerabilities array
+export const calculateStatsFromVulnerabilities = (
+  vulnerabilities: IVulnerabilityType[],
+  statData: IStatType
+) => {
+  const ecosystemStats: Record<string, number> = {};
+  const durationStats: Record<string, IRecord> = {};
+  const severityStats: SeverityStats = {
+    CRITICAL: { total: 0 },
+    HIGH: { total: 0 },
+    MEDIUM: { total: 0 },
+    LOW: { total: 0 }
+  };
+
+  // Initialize ecosystem stats
+  ECOSYSTEM_LIST.forEach((eco) => {
+    ecosystemStats[eco.value] = 0;
+    durationStats[eco.value] = {
+      fetchedAt: statData.lastRefresh,
+      duration: 7 // Default to 7 days
+    };
+  });
+
+  // Count vulnerabilities by ecosystem and severity
+  vulnerabilities.forEach((vul) => {
+    // Count by ecosystem
+    if (ecosystemStats.hasOwnProperty(vul.ecosystem)) {
+      ecosystemStats[vul.ecosystem]++;
+    }
+
+    // Count by severity
+    if (severityStats[vul.severity]) {
+      severityStats[vul.severity].total++;
+      if (!severityStats[vul.severity][vul.ecosystem]) {
+        severityStats[vul.severity][vul.ecosystem] = 0;
+      }
+      severityStats[vul.severity][vul.ecosystem]++;
+    }
+  });
+
+  return {
+    ecosystemStats,
+    durationStats,
+    severityStats,
+    totalVulnerabilities: vulnerabilities.length,
+    lastRefresh: statData.lastRefresh
+  };
 };

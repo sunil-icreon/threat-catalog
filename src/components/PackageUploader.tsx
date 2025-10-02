@@ -3,7 +3,13 @@
 import { IRecord, IVulnerabilityType } from "@/types/vulnerability";
 import { ECOSYSTEM_NAME, STORAGE_KEYS } from "@/utilities/constants";
 import { cacheManager } from "@/utilities/util";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  ReactNode,
+  useCallback,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   Alert,
   Button,
@@ -49,7 +55,7 @@ const PackageUploader: React.FC<PackageUploaderProps> = ({
   const [vulList, setVulList] = useState<Array<any>>([]);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isScanningComplete, setIsScanningComplete] = useState<boolean>(false);
-  const [vulHeaderText, setVulHeaderText] = useState<string>("");
+  const [vulHeaderText, setVulHeaderText] = useState<string | ReactNode>("");
 
   const detectEcosystem = (fileName: string, content: string): string => {
     const lowerFileName = fileName.toLowerCase();
@@ -415,8 +421,14 @@ const PackageUploader: React.FC<PackageUploaderProps> = ({
 
     setIsScanningComplete(() => true);
     setVulList(packageVuls);
-    setVulHeaderText(
-      () => `${packageVuls.length} records found in downloaded vulnerabilities`
+    setVulHeaderText(() =>
+      packageVuls.length === 0 ? (
+        <span className='text-low'>
+          Great! No record found in downloaded vulnerabilities
+        </span>
+      ) : (
+        `${packageVuls.length} records found in downloaded vulnerabilities`
+      )
     );
   };
 
@@ -448,10 +460,21 @@ const PackageUploader: React.FC<PackageUploaderProps> = ({
 
     const { vulnerabilities } = vulListData;
 
+    setVulHeaderText(() =>
+      vulnerabilities.length === 0 ? (
+        <span className='text-low'>
+          Great! No records found in live vulnerabilities
+        </span>
+      ) : (
+        `${vulnerabilities.length} records found in live vulnerabilities`
+      )
+    );
+
     setVulHeaderText(
       () => `${vulnerabilities.length} records found in live vulnerabilities`
     );
 
+    cacheManager.setItem(STORAGE_KEYS.LAST_ANALYZED_PROJECT, projectInfo);
     setVulList(vulnerabilities);
     setIsScanning(() => false);
     setIsScanningComplete(true);
@@ -460,6 +483,17 @@ const PackageUploader: React.FC<PackageUploaderProps> = ({
   const showProjectInfoBox = useMemo(() => {
     return projectInfo || isAnalyzing || error;
   }, [projectInfo, isAnalyzing, error]);
+
+  const pkgWithRelativeVersion = useMemo(() => {
+    if (!projectInfo) {
+      return [];
+    }
+
+    return projectInfo?.packages?.filter(
+      (pck: PackageInfo) =>
+        pck.version.indexOf("~") > -1 || pck.version.indexOf("^") > -1
+    );
+  }, [projectInfo]);
 
   return (
     <Card className='shadow-sm'>
@@ -556,6 +590,40 @@ const PackageUploader: React.FC<PackageUploaderProps> = ({
                             <strong>{projectInfo.packages.length}</strong>
                           </span>
                         </div>
+
+                        {pkgWithRelativeVersion?.length > 0 && (
+                          <>
+                            <div className='small mt-3'>
+                              <div className='b text-muted'>
+                                Packages with relative versions
+                              </div>
+
+                              <div className='small text-danger'>
+                                ⚠ Using ~ or ^ in package.json can silently pull
+                                newer versions with breaking changes or
+                                vulnerabilities, risking stability and security
+                              </div>
+                            </div>
+                            <div>
+                              <div className='text-muted small mt-1'>
+                                {pkgWithRelativeVersion.map(
+                                  (pkg: any, indx: number) => {
+                                    return (
+                                      <div
+                                        key={pkg.name}
+                                        className='d-flex flex-align-center gap-1'
+                                      >
+                                        {indx + 1}.&nbsp;
+                                        <strong>{pkg.name}</strong>@
+                                        {pkg.version}
+                                      </div>
+                                    );
+                                  }
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </Card.Body>
                   </Card>

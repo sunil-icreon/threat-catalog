@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Performance optimizations
-  swcMinify: true,
   compress: true,
   poweredByHeader: false,
 
@@ -95,12 +94,6 @@ const nextConfig = {
         }
       };
     }
-
-    // Add source map support in development
-    if (dev) {
-      config.devtool = "eval-source-map";
-    }
-
     config.resolve.fallback = {
       ...(config.resolve.fallback || {}),
       canvas: false // pretend "canvas" does not exist

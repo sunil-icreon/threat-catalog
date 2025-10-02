@@ -164,15 +164,26 @@ export const RenderAffectedPill = (props: IAffectedPillProps) => {
 
 // eslint-disable-next-line react/display-name
 export const GetEcosystemOptions = memo(() => {
+  const { selectedEcosystems } = useAppStore();
   let options: Array<ReactNode> = [
     <option key='all' value=''>
       All Ecosystems
     </option>
   ];
 
+  const optionList = useMemo(() => {
+    if (!selectedEcosystems || selectedEcosystems.length === 0) {
+      return ECOSYSTEM_LIST;
+    }
+
+    return ECOSYSTEM_LIST.filter((ecos: ILabelValueType) =>
+      selectedEcosystems.includes(ecos.value as string)
+    );
+  }, [selectedEcosystems]);
+
   return [
     ...options,
-    ECOSYSTEM_LIST.map((eco: ILabelValueType) => (
+    optionList.map((eco: ILabelValueType) => (
       <option key={eco.value} value={eco.value}>
         {eco.label}
       </option>

@@ -17,7 +17,7 @@ export const AdvisoryDetailLink = (props: IAdvisoryDetailLinkProps) => {
       <Button
         variant='link'
         type='button'
-        className='p-0 text-decoration-none alt-link small text-left me-3'
+        className='p-0 text-decoration-none alt-link  b small text-left me-3'
         onClick={handleClick}
         style={{ userSelect: "text" }}
       >
