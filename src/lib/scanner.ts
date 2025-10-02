@@ -23,6 +23,7 @@ const GHSA_HELPER = {
         ...vulnerabilities,
         {
           id: vul.ghsa_id,
+          cve_id: vul.cve_id,
           detailURL: vul.html_url,
           packageName: packageInfo?.package?.name,
           version: packageInfo?.vulnerable_version_range,
@@ -30,27 +31,32 @@ const GHSA_HELPER = {
           severity: vul.severity?.toUpperCase(),
           summary: vul.summary,
           source: "GHSA",
-          affected: [packageInfo?.vulnerable_version_range],
+          affectedVersions: [packageInfo?.vulnerable_version_range],
           publishedDate: vul.published_at,
           modifiedDate: vul.updated_at,
           type:
             vul.type === "malware"
               ? VULNERABILITY_TYPE.MALWARE
               : VULNERABILITY_TYPE.VULNERABILITY,
-          score: vul?.cvss?.score,
+          score:
+            vul?.cvss_severities?.cvss_v4?.score ??
+            vul?.cvss_severities?.cvss_v3?.score,
+          score_vector:
+            vul?.cvss_severities?.cvss_v4?.vector_string ??
+            vul?.cvss_severities?.cvss_v3?.vector_string,
           // description: vul.description,
           reviewed: vul.type === "reviewed",
-          cve_id: vul.cve_id,
           cvss: vul.cvss,
           cvss_severities: vul.cvss_severities,
           epss: vul.epss,
-          issues: vul.cwes?.map((cwe: any) => ({
+          weaknesses: vul.cwes?.map((cwe: any) => ({
             id: cwe.cwe_id,
             name: cwe.name
           })),
           ecosystem: ecoSystem.toLocaleLowerCase() as IEcoSystemType,
           references: vul.references,
-          source_code_location: vul.source_code_location
+          source_code_location: vul.source_code_location,
+          review_type: vul.type
         }
       ];
     });
@@ -194,7 +200,7 @@ const OSV_HELPER = {
           packageName: "",
           version: "",
           severity: SEVERITY_TYPE.CRITICAL as ISecerityType,
-          affected: [],
+          affectedVersions: [],
           source: "OSV",
           publishedDate: "",
           ecosystem: ecoSystem
@@ -221,12 +227,12 @@ const OSV_HELPER = {
             const lis = packages.querySelectorAll("li");
             if (lis) {
               lis.forEach((li: any) => {
-                data.affected = [
-                  ...data.affected,
+                data.affectedVersions = [
+                  ...(data.affectedVersions ?? []),
                   li.textContent?.trim().replace("npm/", "")
                 ];
 
-                data.packageName = (data.affected || [])
+                data.packageName = (data.affectedVersions || [])
                   .filter(Boolean)
                   .join(", ");
               });
@@ -332,9 +338,9 @@ const OSV_HELPER = {
               if (affectedVersion) {
                 const { ranges, versions } = affectedVersion;
                 if (ranges) {
-                  selectedFeed.affected = ranges;
+                  selectedFeed.affectedVersions = ranges;
                 } else {
-                  selectedFeed.affected = versions;
+                  selectedFeed.affectedVersions = versions;
                 }
               }
             }

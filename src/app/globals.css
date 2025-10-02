@@ -3,14 +3,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --critical-bg: #841c4e;
-  --critical-bg-alt: #841c4ea8;
-  --high-bg: #8d731c;
-  --high-bg-alt: #8d731c9e;
-  --moderate-bg: #0c547f;
-  --moderate-bg-alt: #0c547f8c;
-  --low-bg: #155c40;
-  --low-bg-alt: #155c4080;
+  --critical-bg: #8f243d;
+  --critical-bg-alt: #8f243d;
+  --critical-text: #8f243d;
+  --high-bg: #dc1e27;
+  --high-bg-alt: #dc1e27;
+  --high-text: #dc1e27;
+  --moderate-bg: #ff8e3d;
+  --moderate-bg-alt: #ff8e3d;
+  --moderate-text: #e47627;
+  --low-bg: #ffc800;
+  --low-bg-alt: #ffc800;
+  --low-text: #836700;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,42 +42,18 @@ body {
 }
 
 .text-critical {
-  color: #721c24;
+  color: var(--critical-text);
 }
 
 .text-high {
-  color: #856404;
+  color: var(--high-text);
 }
 
 .text-medium {
-  color: #0c5460;
+  color: var(--moderate-text);
 }
 .text-low {
-  color: #155724;
-}
-
-.severity-critical {
-  background-color: #f8d7da;
-  color: #721c24;
-  border-color: #f5c6cb;
-}
-
-.severity-high {
-  background-color: #fff3cd;
-  color: #856404;
-  border-color: #ffeaa7;
-}
-
-.severity-medium {
-  background-color: #d1ecf1;
-  color: #0c5460;
-  border-color: #bee5eb;
-}
-
-.severity-low {
-  background-color: #d4edda;
-  color: #155724;
-  border-color: #c3e6cb;
+  color: var(--low-text);
 }
 
 .ecosystem-npm {
@@ -293,14 +273,13 @@ body {
 
 .vul-pill {
   display: flex;
-  border: 1px solid #cfcfcf;
   border-radius: 4px;
-  height: 25px;
+  min-height: 25px;
 
   .label {
     color: white;
     display: flex;
-    padding: 5px;
+    padding: 1px 5px;
     align-items: center;
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
@@ -312,10 +291,17 @@ body {
     color: white;
     display: flex;
     align-items: center;
-    padding: 5px;
+    padding: 1px 5px;
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
     font-size: 13px;
+  }
+
+  &.no-label-pill {
+    .value {
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
   }
 }
 
@@ -354,16 +340,54 @@ body {
   }
   .value {
     background-color: var(--moderate-bg-alt);
+    color: black;
   }
 }
 
 .vul-pill-low {
   .label {
     background-color: var(--low-bg);
+    color: black;
   }
 
   .value {
     background-color: var(--low-bg-alt);
+    color: black;
+  }
+}
+
+.vul-pill-grey {
+  .label {
+    background-color: #e4e4e4;
+    color: black;
+  }
+
+  .value {
+    background-color: #c5c5c5;
+    color: black;
+  }
+}
+
+.vul-pill-green {
+  .label {
+    background-color: #9ccda0;
+    color: black;
+  }
+
+  .value {
+    background-color: #cee9d0;
+    color: black;
+  }
+}
+
+.vul-pill-red {
+  .label {
+    background-color: #e42d2d;
+  }
+
+  .value {
+    background-color: #fc9393;
+    color: black;
   }
 }
 
@@ -379,4 +403,307 @@ body {
 
 .badge {
   line-height: normal;
+}
+
+/* Vulnerability Detail Sidebar Styles */
+.vulnerability-sidebar {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 100%;
+  max-width: 500px;
+  height: 100vh;
+  background: white;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1050;
+  transition: right 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.vulnerability-sidebar.open {
+  right: 0;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1049;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.vulnerability-sidebar.open + .sidebar-overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sidebar-content {
+  height: 100%;
+  overflow-y: auto;
+  padding: 1rem;
+  background: white;
+  scroll-behavior: smooth;
+}
+
+.sidebar-header {
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Mobile responsive sidebar */
+@media (max-width: 768px) {
+  .vulnerability-sidebar {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .sidebar-content {
+    padding: 1rem;
+  }
+}
+
+/* Desktop sidebar adjustments */
+@media (min-width: 769px) {
+  .vulnerability-sidebar {
+    width: 500px;
+    max-width: 500px;
+  }
+}
+
+/* Ensure main content doesn't shift when sidebar is open */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+/* Table row hover effect for clickable rows */
+.table-hover tbody tr {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+/* Compact sidebar card styling */
+.vulnerability-sidebar .card {
+  border: 1px solid #e9ecef;
+  box-shadow: none;
+}
+
+.vulnerability-sidebar .card-header {
+  background-color: #f8f9fa !important;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.vulnerability-sidebar .card-body {
+  padding: 0.75rem;
+}
+
+/* Compact text sizing */
+.vulnerability-sidebar .small {
+  font-size: 0.8rem;
+}
+
+.vulnerability-sidebar .h6 {
+  font-size: 1rem;
+}
+
+.vulnerability-sidebar .h5 {
+  font-size: 1.1rem;
+}
+
+/* CVSS Vector Table Styling */
+.vulnerability-sidebar .table-sm th,
+.vulnerability-sidebar .table-sm td {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  vertical-align: middle;
+  line-height: 1.2;
+}
+
+.vulnerability-sidebar .table-sm th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+  white-space: nowrap;
+}
+
+.vulnerability-sidebar .table-sm tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.vulnerability-sidebar .table-responsive {
+  border-radius: 0.375rem;
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+}
+
+.vulnerability-sidebar .table-sm .badge {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.4rem;
+}
+
+/* Mobile Modal Styling */
+.vulnerability-detail-modal .modal-content {
+  height: 100vh;
+  border-radius: 0;
+  border: none;
+}
+
+.vulnerability-detail-modal .modal-header {
+  background-color: #0d6efd !important;
+  color: white !important;
+  border-bottom: none;
+  padding: 1rem;
+}
+
+.vulnerability-detail-modal .modal-body {
+  padding: 1rem;
+  overflow-y: auto;
+  height: calc(100vh - 80px);
+  scroll-behavior: smooth;
+}
+
+.vulnerability-detail-modal .card {
+  border: 1px solid #e9ecef;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.vulnerability-detail-modal .card-header {
+  background-color: #f8f9fa !important;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.vulnerability-detail-modal .table-sm th,
+.vulnerability-detail-modal .table-sm td {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+.vulnerability-detail-modal .table-sm th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.vulnerability-detail-modal .table-sm tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.vulnerability-detail-modal .table-responsive {
+  border-radius: 0.375rem;
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+}
+
+.vulnerability-detail-modal .badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Card hover effect for mobile */
+.cursor-pointer {
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.cursor-pointer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Smooth scrolling support for older browsers */
+@supports not (scroll-behavior: smooth) {
+  .sidebar-content,
+  .vulnerability-detail-modal .modal-body {
+    scroll-behavior: auto;
+  }
+}
+
+/* Compact vulnerability card styling */
+.custom-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.custom-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.custom-card .card-body {
+  padding: 0.75rem;
+}
+
+.custom-card .h6 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.custom-card .small {
+  font-size: 0.75rem;
+}
+
+.custom-card .badge {
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.custom-card code {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+}
+
+/* Compact card icons */
+.custom-card .bi {
+  font-size: 0.7rem;
+}
+
+/* Card border styling */
+.custom-card .border-top {
+  border-color: #e9ecef !important;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+/* Ecosystem cards layout */
+.stat-card {
+  height: 100%;
+}
+
+.stat-card .card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.stat-card .flex-grow-1 {
+  flex-grow: 1;
+}
+
+.stat-card .mt-auto {
+  margin-top: auto;
+}
+
+.text-ellipses {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.affected-list {
+  .affected-divider {
+    border-bottom: 1px solid #f0f0f0;
+
+    &:last-of-type {
+      border-bottom: none;
+    }
+  }
 }

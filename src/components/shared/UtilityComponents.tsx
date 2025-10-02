@@ -1,20 +1,31 @@
 import { useAppStore } from "@/lib/store";
-import { IEcoSystemType, VulnerabilityFilters } from "@/types/vulnerability";
+import {
+  IEcoSystemType,
+  ILabelValueType,
+  IVariantType,
+  VulnerabilityFilters
+} from "@/types/vulnerability";
+import { ECOSYSTEM_LIST } from "@/utilities/constants";
 import { EPSSData, getEPSSRisk } from "@/utilities/util";
-import { ReactNode, useMemo } from "react";
+import { memo, ReactNode, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { severityVariants } from "../VulnerabilityCard";
 
 interface ICountPillProps {
-  label: string | ReactNode;
-  count: number | string;
-  variant: "critical" | "high" | "medium" | "low";
+  label?: string | ReactNode;
+  count: number | string | ReactNode;
+  variant: IVariantType;
+  className?: string;
 }
 export const CountPill = (props: ICountPillProps) => {
-  const { label, count, variant } = props;
+  const { label, count, variant, className } = props;
   return (
-    <div className={`vul-pill vul-pill-${variant}`}>
-      <div className='label'>{label}</div>
+    <div
+      className={`vul-pill vul-pill-${variant} ${className} ${
+        !label ? "no-label-pill" : ""
+      }`}
+    >
+      {label && <div className='label'>{label}</div>}
       <div className='value'>{count}</div>
     </div>
   );
@@ -24,7 +35,7 @@ interface ISeverityCountProps {
   label?: string;
   count: number;
   total: number;
-  variant: "critical" | "high" | "medium" | "low";
+  variant: IVariantType;
   ecosystem?: IEcoSystemType;
   showPercentage?: boolean;
 }
@@ -112,3 +123,59 @@ export const RenderEPSS = (props: IEPSSProps) => {
     </div>
   );
 };
+
+interface IAffectedPillProps {
+  affectedVersions: Array<string> | undefined;
+  label?: string;
+  variant?: IVariantType;
+  className?: string;
+}
+export const RenderAffectedPill = (props: IAffectedPillProps) => {
+  const {
+    affectedVersions,
+    className,
+    label = "Affected",
+    variant = "grey"
+  } = props;
+
+  if (!affectedVersions) {
+    return <></>;
+  }
+
+  return (
+    <CountPill
+      count={
+        <div className='affected-list'>
+          {affectedVersions?.map((aff: string) => {
+            return aff.split(",").map((affected: string) => (
+              <div key={affected} className='affected-divider'>
+                {affected}
+              </div>
+            ));
+          })}
+        </div>
+      }
+      label={label}
+      variant={variant}
+      className={className}
+    />
+  );
+};
+
+// eslint-disable-next-line react/display-name
+export const GetEcosystemOptions = memo(() => {
+  let options: Array<ReactNode> = [
+    <option key='all' value=''>
+      All Ecosystems
+    </option>
+  ];
+
+  return [
+    ...options,
+    ECOSYSTEM_LIST.map((eco: ILabelValueType) => (
+      <option key={eco.value} value={eco.value}>
+        {eco.label}
+      </option>
+    ))
+  ];
+});

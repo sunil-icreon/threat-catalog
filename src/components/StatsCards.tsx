@@ -6,7 +6,12 @@ import {
   SeverityStats,
   VulnerabilityFilters
 } from "@/types/vulnerability";
-import { EPSSData, formatRelativeTime } from "@/utilities/util";
+import { ECOSYSTEM_NAME } from "@/utilities/constants";
+import {
+  EPSSData,
+  formatRelativeTime,
+  sortedObjectByKey
+} from "@/utilities/util";
 import { memo, useMemo } from "react";
 import { Badge, Card, Col, Row, Table } from "react-bootstrap";
 import { RenderEPSS, SeverityCount } from "./shared/UtilityComponents";
@@ -51,6 +56,8 @@ const RenderEcoSystemCards = memo(
   }) => {
     const { ecosystemStats, durationStats, severityStats } = props;
 
+    let sortedEcoSystemStat = sortedObjectByKey(ecosystemStats);
+
     const { setThreatFilter } = useAppStore();
     const handleClick = (ecosystem: string) => {
       let newFilter: VulnerabilityFilters = {
@@ -62,7 +69,7 @@ const RenderEcoSystemCards = memo(
 
     return (
       <>
-        {Object.entries(ecosystemStats).map(([ecosystem, count]) => {
+        {Object.entries(sortedEcoSystemStat).map(([ecosystem, count]) => {
           const ecoSystemDuration = durationStats[ecosystem];
 
           if (!ecoSystemDuration) {
@@ -73,14 +80,15 @@ const RenderEcoSystemCards = memo(
 
           return (
             <Col md={6} lg={3} key={ecosystem}>
-              <Card className='custom-card stat-card'>
-                <Card.Body>
+              <Card className='custom-card stat-card h-100'>
+                <Card.Body className='d-flex flex-column h-100'>
+                  {/* Top section with ecosystem info */}
                   <div className='d-flex flex-column gap-1'>
                     <div className='d-flex justify-content-between align-items-center mb-2'>
                       <div>
                         <p className='text-muted  mb-1 small'>Ecosystem</p>
-                        <h3 className='mb-0 text-uppercase'>
-                          <span>{ecosystem}</span>
+                        <h3 className='mb-0'>
+                          <span>{ECOSYSTEM_NAME[ecosystem] ?? ecosystem}</span>
                         </h3>
                       </div>
                       <div
@@ -94,9 +102,10 @@ const RenderEcoSystemCards = memo(
                     </div>
                   </div>
 
+                  {/* Middle section with severity stats */}
                   <div
                     key={ecosystem}
-                    className='justify-content-between small'
+                    className='justify-content-between small flex-grow-1'
                   >
                     <span className='text-muted text-capitalize'>
                       {severityStats.CRITICAL[ecosystem] > 0 && (
@@ -139,7 +148,8 @@ const RenderEcoSystemCards = memo(
                     </span>
                   </div>
 
-                  <div className='text-muted small mt-3'>
+                  {/* Bottom section with scan info - always at bottom */}
+                  <div className='text-muted small mt-auto border-top'>
                     <span className='small'>
                       Scanned <strong>{formatRelativeTime(fetchedAt)}</strong>{" "}
                       for last <strong>{duration}</strong> day
