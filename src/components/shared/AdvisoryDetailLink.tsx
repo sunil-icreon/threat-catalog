@@ -23,13 +23,6 @@ export const AdvisoryDetailLink = (props: IAdvisoryDetailLinkProps) => {
       >
         <span className='break-all'>{vulnerability.summary}</span>
       </Button>
-      <a
-        href={vulnerability.detailURL}
-        target='_blank'
-        rel='noopener noreferrer'
-      >
-        <i className='bi bi-box-arrow-up-right me-1'></i>
-      </a>
     </>
   );
 };

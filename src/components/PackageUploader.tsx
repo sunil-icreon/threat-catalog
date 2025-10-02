@@ -1,7 +1,7 @@
 "use client";
 
 import { IRecord, IVulnerabilityType } from "@/types/vulnerability";
-import { STORAGE_KEYS } from "@/utilities/constants";
+import { ECOSYSTEM_NAME, STORAGE_KEYS } from "@/utilities/constants";
 import { cacheManager } from "@/utilities/util";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -542,7 +542,8 @@ const PackageUploader: React.FC<PackageUploaderProps> = ({
                           </span>
                           <span className='text-muted small'>
                             <strong>
-                              {projectInfo.ecosystem.toUpperCase()}
+                              {ECOSYSTEM_NAME[projectInfo.ecosystem] ??
+                                projectInfo.ecosystem}
                             </strong>
                           </span>
                         </div>

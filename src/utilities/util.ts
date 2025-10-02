@@ -1,3 +1,4 @@
+import { IRecord } from "@/types/vulnerability";
 import { CACHE_EXPIRY } from "./constants";
 
 const keyPrefix = "tc_";
@@ -200,3 +201,17 @@ export function getEPSSRisk(data: EPSSData): {
     percentile: parseFloat(percentile.toFixed(2)) // 0.2445
   };
 }
+
+export const sortedObjectByKey = (
+  obj: IRecord,
+  order: "ASC" | "DESC" = "ASC"
+) => {
+  const sortedKeys =
+    order === "ASC"
+      ? Object.keys(obj).sort()
+      : Object.keys(obj).sort((a, b) => b.localeCompare(a));
+  return sortedKeys.reduce((acc, key) => {
+    acc[key] = obj[key as keyof typeof obj];
+    return acc;
+  }, {} as Record<string, number>);
+};

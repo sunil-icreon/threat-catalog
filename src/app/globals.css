@@ -3,14 +3,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --critical-bg: #841c4e;
-  --critical-bg-alt: #841c4ea8;
-  --high-bg: #8d731c;
-  --high-bg-alt: #8d731c9e;
-  --moderate-bg: #0c547f;
-  --moderate-bg-alt: #0c547f8c;
-  --low-bg: #155c40;
-  --low-bg-alt: #155c4080;
+  --critical-bg: #8f243d;
+  --critical-bg-alt: #8f243d;
+  --critical-text: #8f243d;
+  --high-bg: #dc1e27;
+  --high-bg-alt: #dc1e27;
+  --high-text: #dc1e27;
+  --moderate-bg: #ff8e3d;
+  --moderate-bg-alt: #ff8e3d;
+  --moderate-text: #e47627;
+  --low-bg: #ffc800;
+  --low-bg-alt: #ffc800;
+  --low-text: #836700;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,42 +42,18 @@ body {
 }
 
 .text-critical {
-  color: #721c24;
+  color: var(--critical-text);
 }
 
 .text-high {
-  color: #856404;
+  color: var(--high-text);
 }
 
 .text-medium {
-  color: #0c5460;
+  color: var(--moderate-text);
 }
 .text-low {
-  color: #155724;
-}
-
-.severity-critical {
-  background-color: #f8d7da;
-  color: #721c24;
-  border-color: #f5c6cb;
-}
-
-.severity-high {
-  background-color: #fff3cd;
-  color: #856404;
-  border-color: #ffeaa7;
-}
-
-.severity-medium {
-  background-color: #d1ecf1;
-  color: #0c5460;
-  border-color: #bee5eb;
-}
-
-.severity-low {
-  background-color: #d4edda;
-  color: #155724;
-  border-color: #c3e6cb;
+  color: var(--low-text);
 }
 
 .ecosystem-npm {
@@ -316,6 +296,13 @@ body {
     border-bottom-right-radius: 4px;
     font-size: 13px;
   }
+
+  &.no-label-pill {
+    .value {
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
+  }
 }
 
 .error-bg {
@@ -353,16 +340,19 @@ body {
   }
   .value {
     background-color: var(--moderate-bg-alt);
+    color: black;
   }
 }
 
 .vul-pill-low {
   .label {
     background-color: var(--low-bg);
+    color: black;
   }
 
   .value {
     background-color: var(--low-bg-alt);
+    color: black;
   }
 }
 
@@ -374,6 +364,29 @@ body {
 
   .value {
     background-color: #c5c5c5;
+    color: black;
+  }
+}
+
+.vul-pill-green {
+  .label {
+    background-color: #9ccda0;
+    color: black;
+  }
+
+  .value {
+    background-color: #cee9d0;
+    color: black;
+  }
+}
+
+.vul-pill-red {
+  .label {
+    background-color: #e42d2d;
+  }
+
+  .value {
+    background-color: #fc9393;
     color: black;
   }
 }
@@ -470,7 +483,6 @@ body.sidebar-open {
 
 /* Table row hover effect for clickable rows */
 .table-hover tbody tr {
-  cursor: pointer;
   transition: background-color 0.15s ease-in-out;
 }
 
@@ -661,8 +673,37 @@ body.sidebar-open {
   padding-top: 0.5rem;
 }
 
+/* Ecosystem cards layout */
+.stat-card {
+  height: 100%;
+}
+
+.stat-card .card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.stat-card .flex-grow-1 {
+  flex-grow: 1;
+}
+
+.stat-card .mt-auto {
+  margin-top: auto;
+}
+
 .text-ellipses {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.affected-list {
+  .affected-divider {
+    border-bottom: 1px solid #f0f0f0;
+
+    &:last-of-type {
+      border-bottom: none;
+    }
+  }
 }

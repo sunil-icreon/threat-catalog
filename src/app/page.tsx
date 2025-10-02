@@ -1,5 +1,6 @@
 "use client";
 
+import { GetEcosystemOptions } from "@/components/shared/UtilityComponents";
 import { useAppStore } from "@/lib/store";
 import { STORAGE_KEYS } from "@/utilities/constants";
 import { cacheManager } from "@/utilities/util";
@@ -519,6 +520,7 @@ export default function Dashboard() {
                   <Col sm={12} lg={6}>
                     <Form.Label>Ecosystem</Form.Label>
                     <Form.Select
+                      defaultValue='npm'
                       onChange={(e) =>
                         handleLatestQueryFilterChange(
                           "ecosystem",
@@ -526,11 +528,7 @@ export default function Dashboard() {
                         )
                       }
                     >
-                      <option value='npm' selected>
-                        NPM
-                      </option>
-                      <option value='maven'>Maven</option>
-                      <option value='nuget'>NuGet</option>
+                      <GetEcosystemOptions />
                     </Form.Select>
                   </Col>
 
