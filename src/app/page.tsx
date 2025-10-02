@@ -6,7 +6,7 @@ import { useUrlParams } from "@/hooks/useUrlParams";
 import { useAppStore } from "@/lib/store";
 import { STORAGE_KEYS } from "@/utilities/constants";
 import { cacheManager } from "@/utilities/util";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import {
   Button,
   Col,
@@ -44,7 +44,7 @@ export interface ILatestQueryFilterType {
   duration: "week" | "month" | "today";
   apiKey: string;
 }
-export default function Dashboard() {
+function DashboardContent() {
   const [vulnerabilities, setVulnerabilities] = useState<IVulnerabilityType[]>(
     []
   );
@@ -753,5 +753,13 @@ export default function Dashboard() {
         />
       )}
     </>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }
