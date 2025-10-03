@@ -104,6 +104,7 @@ body {
     position: fixed !important;
     width: 100% !important;
     height: 100% !important;
+    opacity: 1;
   }
 
   /* Ensure modal backdrop covers everything */
@@ -194,6 +195,10 @@ body {
 
   .stat-card .severity-item {
     padding: 3px 0px;
+  }
+
+  .form-label {
+    color: black;
   }
 }
 

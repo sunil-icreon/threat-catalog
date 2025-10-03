@@ -56,7 +56,8 @@ const GHSA_HELPER = {
           ecosystem: ecoSystem.toLocaleLowerCase() as IEcoSystemType,
           references: vul.references,
           source_code_location: vul.source_code_location,
-          review_type: vul.type
+          review_type: vul.type,
+          aliases: vul.aliases
         }
       ];
     });
@@ -314,7 +315,7 @@ const OSV_HELPER = {
 
           if (selectedFeedIndex > -1) {
             const selectedFeed = feedList[selectedFeedIndex];
-            const { modified, affected, database_specific, details } = res;
+            const { modified, affected, database_specific, aliases } = res;
             selectedFeed.modifiedDate = modified;
 
             // if (details) {
@@ -338,7 +339,17 @@ const OSV_HELPER = {
               if (affectedVersion) {
                 const { ranges, versions } = affectedVersion;
                 if (ranges) {
-                  selectedFeed.affectedVersions = ranges;
+                  selectedFeed.affectedVersions = ranges.flatMap((range: any) =>
+                    range.events
+                      .map((ev: any) =>
+                        ev.introduced
+                          ? `>=${ev.introduced}`
+                          : ev.fixed
+                          ? `<${ev.fixed}`
+                          : ""
+                      )
+                      .filter(Boolean)
+                  );
                 } else {
                   selectedFeed.affectedVersions = versions;
                 }
@@ -360,6 +371,8 @@ const OSV_HELPER = {
                 }
               }
             }
+            selectedFeed.aliases = aliases;
+            selectedFeed.detailURL = `https://osv.dev/vulnerability/${selectedFeed.id}`;
 
             feedList[selectedFeedIndex] = selectedFeed;
           }
@@ -496,9 +509,9 @@ export const fetchRSSFeeds = async (filterData: {
       ...(ghsa.status === "fulfilled" ? ghsa.value : [])
     ];
 
-    // const osvResults = await fetchOSV(filterData, publishDuration, allResults);
+    const osvResults = await fetchOSV(filterData, publishDuration, allResults);
 
-    // allResults = [...allResults, ...osvResults];
+    allResults = [...allResults, ...osvResults];
 
     const merged: Array<IVulnerabilityType> = deduplicate(allResults);
 

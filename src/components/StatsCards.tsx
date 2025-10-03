@@ -6,14 +6,18 @@ import {
   SeverityStats,
   VulnerabilityFilters
 } from "@/types/vulnerability";
-import { ECOSYSTEM_NAME, STORAGE_KEYS } from "@/utilities/constants";
+import {
+  ECOSYSTEM_LIST,
+  ECOSYSTEM_NAME,
+  STORAGE_KEYS
+} from "@/utilities/constants";
 import {
   cacheManager,
   formatRelativeTime,
   sortedObjectByKey
 } from "@/utilities/util";
 import { useRouter } from "next/navigation";
-import { memo, useMemo } from "react";
+import { Fragment, memo, useMemo } from "react";
 import { Card, Col, Row } from "react-bootstrap";
 import semver from "semver";
 import { ProjectInfo } from "./PackageUploader";
@@ -40,7 +44,7 @@ interface IRenderStatCardProps {
 
 // eslint-disable-next-line react/display-name
 const RenderStatCard = memo((props: IRenderStatCardProps) => {
-  const { countStat, total, variant, ecosystemStats } = props;
+  const { countStat, total, variant } = props;
   return (
     <SeverityCount
       count={countStat.total}
@@ -60,7 +64,7 @@ const RenderEcoSystemCards = memo(
   }) => {
     const { ecosystemStats, durationStats, severityStats } = props;
     const router = useRouter();
-    const { setThreatFilter } = useAppStore();
+    const { setThreatFilter, selectedEcosystems } = useAppStore();
 
     const handleClick = (ecosystem: string) => {
       let newFilter: VulnerabilityFilters = {
@@ -83,8 +87,8 @@ const RenderEcoSystemCards = memo(
         {Object.entries(sortedEcoSystemStat).map(([ecosystem, count]) => {
           const ecoSystemDuration = durationStats[ecosystem];
 
-          if (!ecoSystemDuration) {
-            return <></>;
+          if (!ecoSystemDuration || !selectedEcosystems.includes(ecosystem)) {
+            return <Fragment key={ecosystem}></Fragment>;
           }
 
           const { fetchedAt, duration } = ecoSystemDuration;
@@ -119,7 +123,7 @@ const RenderEcoSystemCards = memo(
                     className='justify-content-between small flex-grow-1'
                   >
                     <span className='text-muted text-capitalize'>
-                      {severityStats.CRITICAL[ecosystem] > 0 && (
+                      {severityStats.CRITICAL?.[ecosystem] > 0 && (
                         <SeverityCount
                           count={severityStats.CRITICAL[ecosystem]}
                           total={count}
@@ -129,7 +133,7 @@ const RenderEcoSystemCards = memo(
                         />
                       )}
 
-                      {severityStats.HIGH[ecosystem] > 0 && (
+                      {severityStats.HIGH?.[ecosystem] > 0 && (
                         <SeverityCount
                           count={severityStats.HIGH[ecosystem]}
                           total={count}
@@ -138,7 +142,7 @@ const RenderEcoSystemCards = memo(
                           ecosystem={ecosystem as IEcoSystemType}
                         />
                       )}
-                      {severityStats.MEDIUM[ecosystem] > 0 && (
+                      {severityStats.MEDIUM?.[ecosystem] > 0 && (
                         <SeverityCount
                           count={severityStats.MEDIUM[ecosystem]}
                           total={count}
@@ -147,7 +151,7 @@ const RenderEcoSystemCards = memo(
                           ecosystem={ecosystem as IEcoSystemType}
                         />
                       )}
-                      {severityStats.LOW[ecosystem] > 0 && (
+                      {severityStats.LOW?.[ecosystem] > 0 && (
                         <SeverityCount
                           count={severityStats.LOW[ecosystem]}
                           total={count}
@@ -177,20 +181,17 @@ const RenderEcoSystemCards = memo(
   }
 );
 
+type EcosystemData = Record<string, number>;
+type SeverityData = Record<string, EcosystemData>;
+
 export default function StatsCards({
   ecosystemStats,
   severityStats,
   durationStats,
   totalVulnerabilities,
-  vulnerabilities,
-  onVulnerabilityClick
+  vulnerabilities
 }: StatsCardsProps) {
-  const criticalStat = severityStats.CRITICAL;
-  const highStat = severityStats.HIGH;
-  const mediumStat = severityStats.MEDIUM;
-  const lowStat = severityStats.LOW;
-
-  const { setThreatFilter } = useAppStore();
+  const { setThreatFilter, selectedEcosystems } = useAppStore();
   const router = useRouter();
 
   const handleClick = () => {
@@ -239,6 +240,59 @@ export default function StatsCards({
     };
   }, [vulnerabilities]);
 
+  function filterEcosystemTotals(data: SeverityData, ecosystemArray: string[]) {
+    const result: SeverityData = {};
+
+    for (const [severity, values] of Object.entries(data)) {
+      // Clone the severity data
+      const updated: EcosystemData = { ...values };
+
+      let newTotal = values.total;
+
+      // Subtract values for ecosystems not in the array
+      for (const [eco, count] of Object.entries(values)) {
+        if (eco !== "total" && !ecosystemArray.includes(eco)) {
+          newTotal -= count;
+        }
+      }
+
+      updated.total = newTotal;
+      result[severity] = updated;
+    }
+
+    return result;
+  }
+
+  const { criticalStat, highStat, mediumStat, lowStat, total } = useMemo(() => {
+    if (selectedEcosystems.length <= ECOSYSTEM_LIST.length) {
+      const filteredStats = filterEcosystemTotals(
+        severityStats,
+        selectedEcosystems
+      );
+
+      if (filteredStats) {
+        return {
+          criticalStat: filteredStats.CRITICAL,
+          highStat: filteredStats.HIGH,
+          mediumStat: filteredStats.MEDIUM,
+          lowStat: filteredStats.LOW,
+          total: Object.values(filteredStats).reduce(
+            (sum, severityData) => sum + severityData.total,
+            0
+          )
+        };
+      }
+    }
+
+    return {
+      criticalStat: severityStats.CRITICAL,
+      highStat: severityStats.HIGH,
+      mediumStat: severityStats.MEDIUM,
+      lowStat: severityStats.LOW,
+      total: totalVulnerabilities
+    };
+  }, [severityStats, selectedEcosystems]);
+
   return (
     <Row className='g-4 mb-4'>
       {totalVulnerabilities > 0 && (
@@ -248,7 +302,7 @@ export default function StatsCards({
               <div className='d-flex justify-content-between align-items-center mb-3'>
                 <div>
                   <p className='text-muted mb-1 small'>Total Vulnerabilities</p>
-                  <h3 className='mb-0'>{totalVulnerabilities}</h3>
+                  <h3 className='mb-0'>{total}</h3>
                 </div>
                 <div
                   className='p-3 bg-primary bg-opacity-10 rounded-circle cursor-pointer'

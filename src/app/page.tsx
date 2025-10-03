@@ -6,7 +6,7 @@ import { useUrlParams } from "@/hooks/useUrlParams";
 import { useAppStore } from "@/lib/store";
 import { STORAGE_KEYS } from "@/utilities/constants";
 import { cacheManager } from "@/utilities/util";
-import { useCallback, useEffect, useState, Suspense } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   Button,
   Col,

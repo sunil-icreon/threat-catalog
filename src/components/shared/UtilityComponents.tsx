@@ -9,7 +9,6 @@ import { ECOSYSTEM_LIST } from "@/utilities/constants";
 import { EPSSData, getEPSSRisk } from "@/utilities/util";
 import { memo, ReactNode, useMemo } from "react";
 import { Badge } from "react-bootstrap";
-import { severityVariants } from "../VulnerabilityCard";
 
 interface ICountPillProps {
   label?: string | ReactNode;
@@ -105,10 +104,7 @@ export const RenderEPSS = (props: IEPSSProps) => {
 
   if (displayType === "card") {
     return (
-      <Badge
-        bg={severityVariants[epssData.risk]}
-        className={`text-capitalize small`}
-      >
+      <Badge bg='outline' className='ecosystem-maven text-capitalize small'>
         EPSS:{epssData.score}%
       </Badge>
     );
@@ -146,7 +142,7 @@ export const RenderAffectedPill = (props: IAffectedPillProps) => {
     <CountPill
       count={
         <div className='affected-list'>
-          {affectedVersions?.map((aff: string) => {
+          {affectedVersions?.filter(Boolean).map((aff: string) => {
             return aff.split(",").map((affected: string) => (
               <div key={affected} className='affected-divider'>
                 {affected}
