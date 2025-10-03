@@ -138,7 +138,6 @@ export const RenderAffectedPill = (props: IAffectedPillProps) => {
     return <></>;
   }
 
-  console.log("affectedVersions", affectedVersions);
   return (
     <CountPill
       count={
