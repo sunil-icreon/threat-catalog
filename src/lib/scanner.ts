@@ -318,44 +318,6 @@ const OSV_HELPER = {
             const { modified, affected, database_specific, aliases } = res;
             selectedFeed.modifiedDate = modified;
 
-            // if (details) {
-            //   // selectedFeed.detailSummary = details;
-
-            //   if (
-            //     details.indexOf(
-            //       "\n---\n_-= Per source details. Do not edit below this line"
-            //     ) > -1
-            //   ) {
-            //     const re =
-            //       /## Source:\s*ghsa-malware[^\n]*\n([\s\S]*?)(?:\n\s*\n|$)/;
-            //     const m = details.match(re);
-            //     // selectedFeed.detailSummary = m ? m[1].trim() : details;
-            //   }
-            // }
-
-            if (affected && affected.length > 0) {
-              const affectedVersion = affected[0];
-
-              if (affectedVersion) {
-                const { ranges, versions } = affectedVersion;
-                if (ranges) {
-                  selectedFeed.affectedVersions = ranges.flatMap((range: any) =>
-                    range.events
-                      .map((ev: any) =>
-                        ev.introduced
-                          ? `>=${ev.introduced}`
-                          : ev.fixed
-                          ? `<${ev.fixed}`
-                          : ""
-                      )
-                      .filter(Boolean)
-                  );
-                } else {
-                  selectedFeed.affectedVersions = versions;
-                }
-              }
-            }
-
             if (database_specific) {
               const severity = database_specific["severity"];
               if (severity) {
@@ -373,6 +335,38 @@ const OSV_HELPER = {
             }
             selectedFeed.aliases = aliases;
             selectedFeed.detailURL = `https://osv.dev/vulnerability/${selectedFeed.id}`;
+
+            if (affected && affected.length > 0) {
+              let affectedVersions: Array<string> = [];
+              affected.forEach((aff: any) => {
+                if (aff) {
+                  const { ranges, versions, package: pkg } = aff;
+                  if (ranges) {
+                    affectedVersions.push(
+                      ...ranges.flatMap((range: any) =>
+                        range.events
+                          .map((ev: any) =>
+                            ev.introduced
+                              ? selectedFeed.packageName === pkg.name
+                                ? `>=${ev.introduced}`
+                                : `${pkg.name}@>=${ev.introduced}`
+                              : ev.fixed
+                              ? selectedFeed.packageName === pkg.name
+                                ? `<${ev.fixed}`
+                                : `${pkg.name}@<${ev.fixed}`
+                              : ""
+                          )
+                          .filter(Boolean)
+                      )
+                    );
+                  } else {
+                    affectedVersions.push(...versions);
+                  }
+                }
+              });
+
+              selectedFeed.affectedVersions = affectedVersions;
+            }
 
             feedList[selectedFeedIndex] = selectedFeed;
           }
