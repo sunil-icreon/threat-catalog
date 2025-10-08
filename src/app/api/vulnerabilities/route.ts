@@ -23,21 +23,21 @@ export async function GET(request: NextRequest) {
       `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`
     );
     response.headers.set("CDN-Cache-Control", `max-age=${CACHE_DURATION}`);
-    response.headers.set(
-      "Vercel-CDN-Cache-Control",
-      `max-age=${CACHE_DURATION}`
-    );
-    response.headers.set("Vercel-Cache-Tags", CACHE_TAGS.join(","));
+    // response.headers.set(
+    //   "Vercel-CDN-Cache-Control",
+    //   `max-age=${CACHE_DURATION}`
+    // );
+    // response.headers.set("Vercel-Cache-Tags", CACHE_TAGS.join(","));
 
-    // Add ETag for conditional requests
-    const etag = `"${Buffer.from(JSON.stringify(result)).toString("base64")}"`;
-    response.headers.set("ETag", etag);
+    // // Add ETag for conditional requests
+    // const etag = `"${Buffer.from(JSON.stringify(result)).toString("base64")}"`;
+    // response.headers.set("ETag", etag);
 
     // Check if client has cached version
-    const ifNoneMatch = request.headers.get("if-none-match");
-    if (ifNoneMatch === etag) {
-      return new NextResponse(null, { status: 304 });
-    }
+    // const ifNoneMatch = request.headers.get("if-none-match");
+    // if (ifNoneMatch === etag) {
+    //   return new NextResponse(null, { status: 304 });
+    // }
 
     return response;
   } catch (error) {
