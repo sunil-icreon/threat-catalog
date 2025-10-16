@@ -58,7 +58,7 @@ export const DashboardContent = (props: any) => {
     useState<ILatestQueryFilterType>({
       ecosystem: "NPM",
       duration: "week",
-      apiKey: "" // $#icr#thrtcat@96
+      apiKey: ""
     });
 
   const {
