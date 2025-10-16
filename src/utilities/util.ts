@@ -78,10 +78,24 @@ export const toFirestoreFields = (
   return { fields };
 };
 
+export const convertUTCToLocal = (utcDateString: string | Date): string => {
+  if (!utcDateString) return "";
+
+  const date = new Date(utcDateString);
+
+  if (isNaN(date.getTime())) {
+    return "Invalid date";
+  }
+
+  return date.toLocaleString(); // Automatically uses user's timezone
+};
+
 export const formatRelativeTime = (dateInput?: string) => {
   if (!dateInput) {
     return "";
   }
+
+  dateInput = convertUTCToLocal(dateInput);
 
   const date = new Date(dateInput);
   const now = new Date();

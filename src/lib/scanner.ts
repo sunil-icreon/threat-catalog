@@ -1,9 +1,10 @@
-import { ILatestQueryFilterType } from "@/app/page";
-import { PackageInfo, ProjectInfo } from "@/components/PackageUploader";
+import { ILatestQueryFilterType } from "@/components/DashboardContent";
+
 import {
   IEcoSystemType,
   ISecerityType,
   IVulnerabilityType,
+  PackageInfo,
   SEVERITY_TYPE
 } from "@/types/vulnerability";
 
@@ -149,9 +150,7 @@ const fetchInBatches = async (
   return allVuls;
 };
 
-export const findVulnerabilitiesInPackage = async (
-  projectInfo: ProjectInfo
-) => {
+export const findVulnerabilitiesInPackage = async (projectInfo: any) => {
   const { packages, ecosystem } = projectInfo;
 
   const packagesStr = packages

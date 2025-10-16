@@ -1,7 +1,9 @@
 import { findVulnerabilitiesInPackage } from "@/lib/scanner";
 import fs from "fs";
 
+import { clearVulnerabilityActionData } from "@/app/actions/vulnerabilities.action";
 import { IRecord } from "@/types/vulnerability";
+import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import { VulnerabilityService } from "../../../lib/vulnerabilityService";
@@ -68,7 +70,10 @@ const fetchLatest = async (request: NextRequest, body: Record<string, any>) => {
     });
   }
 
+  clearVulnerabilityActionData();
+
   const vulnerabilityService = VulnerabilityService.getInstance();
+
   const result = await vulnerabilityService.getLatestVulnerabilities(
     duration,
     ecosystem,
@@ -187,29 +192,34 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    const response = NextResponse.json(result);
+    revalidateTag("advisories");
+    const response = NextResponse.json({
+      result,
+      revalidated: true,
+      now: Date.now()
+    });
 
-    // Set cache headers
-    response.headers.set(
-      "Cache-Control",
-      `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`
-    );
-    response.headers.set("CDN-Cache-Control", `max-age=${CACHE_DURATION}`);
-    response.headers.set(
-      "Vercel-CDN-Cache-Control",
-      `max-age=${CACHE_DURATION}`
-    );
-    response.headers.set("Vercel-Cache-Tags", CACHE_TAGS.join(","));
+    // // Set cache headers
+    // response.headers.set(
+    //   "Cache-Control",
+    //   `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`
+    // );
+    // response.headers.set("CDN-Cache-Control", `max-age=${CACHE_DURATION}`);
+    // response.headers.set(
+    //   "Vercel-CDN-Cache-Control",
+    //   `max-age=${CACHE_DURATION}`
+    // );
+    // response.headers.set("Vercel-Cache-Tags", CACHE_TAGS.join(","));
 
-    // Add ETag for conditional requests
-    const etag = `"${Buffer.from(JSON.stringify(result)).toString("base64")}"`;
-    response.headers.set("ETag", etag);
+    // // Add ETag for conditional requests
+    // const etag = `"${Buffer.from(JSON.stringify(result)).toString("base64")}"`;
+    // response.headers.set("ETag", etag);
 
-    // Check if client has cached version
-    const ifNoneMatch = request.headers.get("if-none-match");
-    if (ifNoneMatch === etag) {
-      return new NextResponse(null, { status: 304 });
-    }
+    // // Check if client has cached version
+    // const ifNoneMatch = request.headers.get("if-none-match");
+    // if (ifNoneMatch === etag) {
+    //   return new NextResponse(null, { status: 304 });
+    // }
 
     return response;
   } catch (error) {

@@ -6,23 +6,13 @@ import {
   SeverityStats,
   VulnerabilityFilters
 } from "@/types/vulnerability";
-import {
-  ECOSYSTEM_LIST,
-  ECOSYSTEM_NAME,
-  STORAGE_KEYS
-} from "@/utilities/constants";
-import {
-  cacheManager,
-  formatRelativeTime,
-  sortedObjectByKey
-} from "@/utilities/util";
+import { ECOSYSTEM_LIST, ECOSYSTEM_NAME } from "@/utilities/constants";
+import { formatRelativeTime, sortedObjectByKey } from "@/utilities/util";
 import { useRouter } from "next/navigation";
 import { Fragment, memo, useMemo } from "react";
 import { Card, Col, Row } from "react-bootstrap";
-import semver from "semver";
-import { ProjectInfo } from "./PackageUploader";
-import { CountPill, SeverityCount } from "./shared/UtilityComponents";
-import VulnerabilityDisplay from "./VulnerabilityDisplay";
+
+import { SeverityCount } from "./shared/UtilityComponents";
 
 interface StatsCardsProps {
   ecosystemStats: Record<string, number>;
@@ -75,7 +65,7 @@ const RenderEcoSystemCards = memo(
 
       const params = new URLSearchParams(window.location.search);
       params.set("ecosystem", ecosystem);
-      router.replace(`?${params.toString()}`, { scroll: false });
+      router.push(`?${params.toString()}`, { scroll: false });
     };
 
     const sortedEcoSystemStat = useMemo(() => {
@@ -196,49 +186,8 @@ export default function StatsCards({
 
   const handleClick = () => {
     setThreatFilter({});
-
-    router.replace("/", { scroll: false });
+    router.push("/", { scroll: false });
   };
-
-  const { foundCount, foundVuls } = useMemo(() => {
-    const lastAnalyzed: ProjectInfo | null = cacheManager.getItem(
-      STORAGE_KEYS.LAST_ANALYZED_PROJECT
-    );
-    if (lastAnalyzed) {
-      const targetMap = new Map<string, any[]>();
-      for (const t of vulnerabilities) {
-        if (!targetMap.has(t.packageName)) targetMap.set(t.packageName, []);
-        targetMap.get(t.packageName)!.push(t);
-      }
-
-      const matchedTargets: any[] = [];
-
-      for (const s of lastAnalyzed.packages) {
-        const targets = targetMap.get(s.name) ?? [];
-        for (const t of targets) {
-          if (semver.satisfies(s.version, t.version)) {
-            matchedTargets.push(t);
-          }
-        }
-      }
-
-      if (matchedTargets.length > 0) {
-        return {
-          foundCount: matchedTargets.length,
-          foundVuls: {
-            name: lastAnalyzed.name,
-            version: lastAnalyzed.version,
-            matchedVuls: matchedTargets
-          }
-        };
-      }
-    }
-
-    return {
-      foundCount: 0,
-      foundVuls: null
-    };
-  }, [vulnerabilities]);
 
   function filterEcosystemTotals(data: SeverityData, ecosystemArray: string[]) {
     const result: SeverityData = {};
@@ -291,7 +240,7 @@ export default function StatsCards({
       lowStat: severityStats.LOW,
       total: totalVulnerabilities
     };
-  }, [severityStats, selectedEcosystems]);
+  }, [severityStats, selectedEcosystems, totalVulnerabilities]);
 
   return (
     <Row className='g-4 mb-4'>
@@ -363,40 +312,6 @@ export default function StatsCards({
         ecosystemStats={ecosystemStats}
         severityStats={severityStats}
       />
-
-      {foundCount > 0 && foundVuls && (
-        <Col md={12}>
-          <Card className='custom-card vul-in-project-card'>
-            <Card.Body>
-              <div className='d-flex justify-content-between align-items-center mb-2'>
-                <div>
-                  <h6 className='mb-1 text-danger'>
-                    Vulnerabilities found in last analyzed package
-                  </h6>
-                </div>
-              </div>
-
-              <div className='d-flex flex-column gap-1'>
-                <div className='d-flex gap-3 flex-wrap'>
-                  <CountPill
-                    count={foundVuls.name}
-                    label={<b>Project Name</b>}
-                    variant='grey'
-                  />
-
-                  <CountPill
-                    count={foundCount}
-                    label={<b>Vulnerabilities</b>}
-                    variant='grey'
-                  />
-                </div>
-
-                <VulnerabilityDisplay vulnerabilities={foundVuls.matchedVuls} />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      )}
     </Row>
   );
 }
