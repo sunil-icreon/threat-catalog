@@ -754,6 +754,12 @@ body.sidebar-open {
   border-collapse: collapse;
 }
 
+.package-info {
+  code {
+    word-break: break-all;
+  }
+}
+
 .advisory-metadata th,
 .package-info th,
 .remediation-info th {
