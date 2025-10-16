@@ -18,11 +18,6 @@ export default function Header() {
               <i className='bi bi-speedometer2 me-1'></i>
               Dashboard
             </Nav.Link>
-
-            <Nav.Link as={Link} href='/package-analyzer' className='fw-medium'>
-              <i className='bi bi-search me-1'></i>
-              Package Analyzer
-            </Nav.Link>
           </Nav>
         </Navbar.Collapse>
       </Container>

@@ -56,6 +56,10 @@ body {
   color: var(--low-text);
 }
 
+.text-green {
+  color: green;
+}
+
 .ecosystem-npm {
   background-color: #cce5ff;
   color: #004085;
@@ -243,6 +247,8 @@ body {
   font-weight: bold;
 }
 .alt-link {
+  line-height: 1.2;
+
   color: #404040;
 
   &:hover {
@@ -307,6 +313,7 @@ body {
 
   &.no-label-pill {
     display: block;
+    min-height: auto;
 
     .value {
       border-top-left-radius: 4px;
@@ -644,6 +651,10 @@ body.sidebar-open {
 /* Compact vulnerability card styling */
 .custom-card {
   transition: all 0.2s ease-in-out;
+
+  th {
+    width: 120px;
+  }
 }
 
 .custom-card:hover {
@@ -672,7 +683,7 @@ body.sidebar-open {
 
 .custom-card code {
   font-size: 0.7rem;
-  padding: 0.2rem 0.4rem;
+  word-break: break-all;
 }
 
 /* Compact card icons */
@@ -720,4 +731,81 @@ body.sidebar-open {
       border-bottom: none;
     }
   }
+}
+
+.security-advisory {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  border-radius: 6px;
+  background-color: #fff;
+}
+
+.security-advisory.detailed h2 {
+  color: #24292f;
+  border-bottom: 1px solid #e1e4e8;
+  padding-bottom: 8px;
+  margin-top: 0;
+}
+
+.advisory-metadata,
+.package-info,
+.remediation-info {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.advisory-metadata th,
+.package-info th,
+.remediation-info th {
+  text-align: left;
+  padding-right: 20px;
+  padding-bottom: 8px;
+  color: #57606a;
+  font-weight: 400;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.advisory-metadata td,
+.package-info td,
+.remediation-info td {
+  padding-bottom: 8px;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.severity-badge,
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+code.version {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+code.patched {
+  background-color: #dafbe1;
+  color: #1a7f37;
+}
+
+code.vulnerable {
+  background-color: #ffebe9;
+  color: #a40e26;
+}
+
+.action {
+  margin-top: 1rem;
+  padding: 12px 16px;
+  background-color: #effaff;
+  border: 1px solid #ddefff66;
+  border-radius: 6px;
+  color: #0969da;
+  font-size: 0.8rem;
 }
