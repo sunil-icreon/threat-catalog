@@ -1,36 +1,32 @@
+import { IEcoSystemType } from "@/types/vulnerability";
+import { getPackageURL } from "@/utilities/util";
 import { useMemo } from "react";
 
 interface IPackageDetailLinkProps {
   ecoSystem: string;
   packageName: string;
+  label?: string;
+  version?: string;
+  className?: string;
 }
 export const PackageDetailLink = (props: IPackageDetailLinkProps) => {
-  const { ecoSystem, packageName } = props;
+  const { ecoSystem, packageName, version, label, className } = props;
 
   const url = useMemo(() => {
-    switch (ecoSystem) {
-      case "npm":
-        return `https://www.npmjs.com/package/${packageName}`;
-
-      case "maven":
-        return `https://mvnrepository.com/artifact/${packageName.replace(
-          ":",
-          "/"
-        )}`;
-
-      case "nuget":
-        return `https://www.nuget.org/packages/${packageName}`;
-    }
-  }, [ecoSystem, packageName]);
+    return getPackageURL(ecoSystem as IEcoSystemType, packageName, version);
+  }, [ecoSystem, packageName, version]);
 
   return (
     <a
       href={url}
       target='_blank'
       rel='noopener noreferrer'
-      className='p-0 text-decoration-none small package-name-cell-content small'
+      className={
+        className ??
+        `p-0 text-decoration-none small package-name-cell-content small`
+      }
     >
-      <span className='break-all'>{packageName}</span>
+      <span className='break-all'>{label ?? packageName}</span>
     </a>
   );
 };

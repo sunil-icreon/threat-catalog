@@ -186,3 +186,22 @@ export const GetEcosystemOptions = memo(() => {
     ))
   ];
 });
+
+interface IAffectedVersionTagsProps {
+  affectedVersions: string[];
+}
+
+export const AffectedVersionTags = (props: IAffectedVersionTagsProps) => {
+  const { affectedVersions } = props;
+  return (
+    <div className='affected-list d-flex flex-wrap gap-1'>
+      {affectedVersions.filter(Boolean).map((aff: string) => {
+        return aff.split(",").map((affected: string) => (
+          <code className='version vulnerable me-1' key={affected}>
+            {affected}
+          </code>
+        ));
+      })}
+    </div>
+  );
+};
