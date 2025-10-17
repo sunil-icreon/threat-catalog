@@ -1,4 +1,5 @@
 import {
+  IEcoSystemType,
   IRecord,
   IStatType,
   IVulnerabilityType,
@@ -272,4 +273,40 @@ export const calculateStatsFromVulnerabilities = (
     totalVulnerabilities: vulnerabilities.length,
     lastRefresh: statData.lastRefresh
   };
+};
+
+export const getPackageURL = (
+  ecoSystem: IEcoSystemType,
+  packageName: string,
+  version?: string
+) => {
+  let packageURL = "";
+  switch (ecoSystem.toLocaleLowerCase()) {
+    case "npm":
+      packageURL = `https://www.npmjs.com/package/${packageName}`;
+      if (version) {
+        return `${packageURL}/v/${version}`;
+      }
+      return packageURL;
+
+    case "maven":
+      packageURL = `https://mvnrepository.com/artifact/${packageName.replace(
+        ":",
+        "/"
+      )}`;
+
+      if (version) {
+        return `${packageURL}/${version}`;
+      }
+
+      return packageURL;
+
+    case "nuget":
+      packageURL = `https://www.nuget.org/packages/${packageName}`;
+      if (version) {
+        return `${packageURL}/${version}`;
+      }
+
+      return packageURL;
+  }
 };
