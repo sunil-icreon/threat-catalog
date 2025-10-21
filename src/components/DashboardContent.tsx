@@ -295,9 +295,9 @@ export const DashboardContent = (props: any) => {
       return;
     }
 
-    router.refresh();
     setFetchingLatest(false);
     setshowFetchLatestModal(() => false);
+    router.refresh();
   };
 
   useEffect(() => {
