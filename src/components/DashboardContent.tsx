@@ -5,7 +5,13 @@ import { GetEcosystemOptions } from "@/components/shared/UtilityComponents";
 import { useAppStore } from "@/lib/store";
 import { STORAGE_KEYS } from "@/utilities/constants";
 import { cacheManager } from "@/utilities/util";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+  useTransition
+} from "react";
 import {
   Button,
   Col,
@@ -19,6 +25,10 @@ import {
 } from "react-bootstrap";
 import Header from "../components/Header";
 
+import {
+  actionFetchLatest,
+  actionPurgeCache
+} from "@/app/actions/vulnerabilities.action";
 import { useRouter } from "next/navigation";
 import StatsCards from "../components/StatsCards";
 import VulnerabilityDetailModal from "../components/VulnerabilityDetailModal";
@@ -29,7 +39,6 @@ import {
   IEcoSystemType,
   IRecord,
   ISecerityType,
-  IStatCacheType,
   IStatType,
   IVulnerabilityType,
   SeverityStats,
@@ -50,7 +59,9 @@ export const DashboardContent = (props: any) => {
     vulnerabilityList.vulnerabilities
   );
 
-  const [fetchingLatest, setFetchingLatest] = useState<boolean>(false);
+  const [refreshing, startTransition] = useTransition();
+  const [fetchingLatest, startFetchLatestTransition] = useTransition();
+
   const [showFetchLatestModal, setshowFetchLatestModal] =
     useState<boolean>(false);
 
@@ -61,14 +72,11 @@ export const DashboardContent = (props: any) => {
       apiKey: ""
     });
 
-  const {
-    selectedEcosystems,
-    setThreatFilter,
-    setSubmittedProjectVuls,
-    setSelectedEcosystems
-  } = useAppStore();
+  const { selectedEcosystems, setThreatFilter, setSelectedEcosystems } =
+    useAppStore();
   const [filteredVuls, setFilteredVuls] = useState<IVulnerabilityType[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [filters, setFilters] = useState<VulnerabilityFilters>({});
@@ -112,7 +120,7 @@ export const DashboardContent = (props: any) => {
 
   const setDataInState = (
     vulnerabilities: Array<IVulnerabilityType>,
-    statData: IStatType | IStatCacheType
+    statData: any
   ) => {
     setVulnerabilities(vulnerabilities);
 
@@ -126,17 +134,13 @@ export const DashboardContent = (props: any) => {
 
     setFilteredVuls(() => filteredVulnerabilities);
 
-    if ("ecosystemStats" in statData) {
-      setStats(statData);
-    } else {
-      setStats({
-        ecosystemStats: statData.ecosystem,
-        durationStats: statData.duration,
-        severityStats: statData.severity,
-        totalVulnerabilities: vulnerabilities.length,
-        lastRefresh: statData.lastRefresh
-      });
-    }
+    setStats({
+      ecosystemStats: statData.ecosystem,
+      durationStats: statData.duration,
+      severityStats: statData.severity,
+      totalVulnerabilities: vulnerabilities.length,
+      lastRefresh: statData.lastRefresh
+    });
   };
 
   const fetchVulnerabilitiesServer = () => {
@@ -264,6 +268,13 @@ export const DashboardContent = (props: any) => {
     setSelectedVulnerability(null);
   };
 
+  const refreshPage = async () => {
+    startTransition(async () => {
+      await actionPurgeCache();
+      router.refresh();
+    });
+  };
+
   const fetchLatestVulnerabilities = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -276,28 +287,11 @@ export const DashboardContent = (props: any) => {
       return;
     }
 
-    setFetchingLatest(true);
-
-    const response = await fetch(`/api/vulnerabilities`, {
-      method: "POST",
-      body: JSON.stringify({ action: "fetchLatest", ...latestQueryFilter })
+    startFetchLatestTransition(async () => {
+      await actionFetchLatest({ ...latestQueryFilter });
+      setshowFetchLatestModal(() => false);
+      router.refresh();
     });
-    // setRefreshing(false);
-
-    if (!response.ok) {
-      if (response.status === 403) {
-        setError("Unauthored. API key is required");
-      } else {
-        setError("Failed to fetch vulnerabilities");
-      }
-
-      setshowFetchLatestModal(false);
-      return;
-    }
-
-    setFetchingLatest(false);
-    setshowFetchLatestModal(() => false);
-    router.refresh();
   };
 
   useEffect(() => {
@@ -348,6 +342,17 @@ export const DashboardContent = (props: any) => {
                 </div>
                 <div className='mb-3 d-flex align-items-center gap-2'>
                   <Button
+                    variant='dark'
+                    className='d-flex align-items-center  ms-2'
+                    size='sm'
+                    disabled={refreshing}
+                    onClick={refreshPage}
+                  >
+                    <i className='bi bi-arrow-clockwise me-2'></i>
+                    {refreshing ? "Refreshing..." : "Refresh"}
+                  </Button>
+
+                  <Button
                     variant='primary'
                     className='d-flex align-items-center  ms-2'
                     size='sm'
@@ -365,15 +370,17 @@ export const DashboardContent = (props: any) => {
             </div>
 
             {/* Stats Cards */}
-            <StatsCards
-              ecosystemStats={stats.ecosystemStats}
-              severityStats={stats.severityStats}
-              totalVulnerabilities={stats.totalVulnerabilities}
-              lastUpdate={stats.lastRefresh}
-              durationStats={stats.durationStats}
-              vulnerabilities={vulnerabilities}
-              onVulnerabilityClick={handleVulnerabilityClick}
-            />
+            {stats.ecosystemStats && (
+              <StatsCards
+                ecosystemStats={stats.ecosystemStats}
+                severityStats={stats.severityStats}
+                totalVulnerabilities={stats.totalVulnerabilities}
+                lastUpdate={stats.lastRefresh}
+                durationStats={stats.durationStats}
+                vulnerabilities={vulnerabilities}
+                onVulnerabilityClick={handleVulnerabilityClick}
+              />
+            )}
             {/* Filters */}
             <VulnerabilityFiltersComponent
               onFiltersChange={handleFiltersChange}
@@ -614,7 +621,7 @@ export const DashboardContent = (props: any) => {
 
               {fetchingLatest && (
                 <>
-                  <div className='text-center py-5'>
+                  <div className='d-flex align-items-center justify-content-center text-center gap-2 py-5'>
                     <Spinner
                       animation='border'
                       variant='primary'
