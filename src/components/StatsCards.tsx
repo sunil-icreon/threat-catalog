@@ -53,7 +53,7 @@ const RenderEcoSystemCards = memo(
     severityStats: SeverityStats;
   }) => {
     const { ecosystemStats, durationStats, severityStats } = props;
-    const router = useRouter();
+    // const router = useRouter();
     const { setThreatFilter, selectedEcosystems } = useAppStore();
 
     const handleClick = (ecosystem: string) => {
@@ -63,9 +63,9 @@ const RenderEcoSystemCards = memo(
 
       setThreatFilter(newFilter);
 
-      const params = new URLSearchParams(window.location.search);
-      params.set("ecosystem", ecosystem);
-      router.push(`?${params.toString()}`, { scroll: false });
+      // const params = new URLSearchParams(window.location.search);
+      // params.set("ecosystem", ecosystem);
+      // router.push(`?${params.toString()}`, { scroll: false });
     };
 
     const sortedEcoSystemStat = useMemo(() => {

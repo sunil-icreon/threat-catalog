@@ -350,10 +350,10 @@ const OSV_HELPER = {
                                 ? `>=${ev.introduced}`
                                 : `${pkg.name}@>=${ev.introduced}`
                               : ev.fixed
-                              ? selectedFeed.packageName === pkg.name
-                                ? `<${ev.fixed}`
-                                : `${pkg.name}@<${ev.fixed}`
-                              : ""
+                                ? selectedFeed.packageName === pkg.name
+                                  ? `<${ev.fixed}`
+                                  : `${pkg.name}@<${ev.fixed}`
+                                : ""
                           )
                           .filter(Boolean)
                       )

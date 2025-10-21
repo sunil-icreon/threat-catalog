@@ -1,15 +1,13 @@
 import { findVulnerabilitiesInPackage } from "@/lib/scanner";
 import fs from "fs";
 
-import { clearVulnerabilityActionData } from "@/app/actions/vulnerabilities.action";
 import { IRecord } from "@/types/vulnerability";
-import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import { VulnerabilityService } from "../../../lib/vulnerabilityService";
 
 // Cache configuration
-const CACHE_DURATION = 300; // 5 minutes in seconds
+const CACHE_DURATION = 21600; // 6 Hrs in seconds
 const CACHE_TAGS = ["vulnerabilities"];
 
 export async function GET(request: NextRequest) {
@@ -19,12 +17,11 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.json(result);
 
-    // Set cache headers
-    response.headers.set(
-      "Cache-Control",
-      `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`
-    );
-    response.headers.set("CDN-Cache-Control", `max-age=${CACHE_DURATION}`);
+    // response.headers.set(
+    //   "Cache-Control",
+    //   `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`
+    // );
+    // response.headers.set("CDN-Cache-Control", `max-age=${CACHE_DURATION}`);
     // response.headers.set(
     //   "Vercel-CDN-Cache-Control",
     //   `max-age=${CACHE_DURATION}`
@@ -65,15 +62,11 @@ const fetchLatest = async (request: NextRequest, body: Record<string, any>) => {
   const { duration = "week", ecosystem = "npm", apiKey } = body;
 
   if (!apiKey || apiKey !== process.env.NEXT_PUBLIC_VUL_API_KEY) {
-    return new NextResponse("Unauthorized. API key is required", {
-      status: 403
-    });
+    console.log("fetchLatest returned with 403");
+    return { errorMsg: "Unauthorized. API key is required", status: 403 };
   }
 
-  clearVulnerabilityActionData();
-
   const vulnerabilityService = VulnerabilityService.getInstance();
-
   const result = await vulnerabilityService.getLatestVulnerabilities(
     duration,
     ecosystem,
@@ -192,7 +185,7 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    revalidateTag("advisories");
+    // revalidateTag("advisories");
     const response = NextResponse.json({
       result,
       revalidated: true,
