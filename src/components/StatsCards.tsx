@@ -190,6 +190,10 @@ export default function StatsCards({
   };
 
   function filterEcosystemTotals(data: SeverityData, ecosystemArray: string[]) {
+    if (!data) {
+      return {};
+    }
+
     const result: SeverityData = {};
 
     for (const [severity, values] of Object.entries(data)) {

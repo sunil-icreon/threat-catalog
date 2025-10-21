@@ -18,17 +18,31 @@ export async function actionGetVulnerabilitiesData() {
   return await vulnerabilityService.updateVulnerabilities();
 }
 
-export async function getVulnerabilitiesDataFromServer() {
-  if (cacheStore) {
-    console.log("Returned from Cache");
-    return cacheStore;
+export async function actionFetchLatest(config: {
+  duration: string;
+  ecosystem: string;
+  apiKey: string;
+}) {
+  const { duration = "week", ecosystem = "npm", apiKey } = config;
+
+  if (!apiKey || apiKey !== process.env.NEXT_PUBLIC_VUL_API_KEY) {
+    console.log("fetchLatest returned with 403");
+    return { errorMsg: "Unauthorized. API key is required", status: 403 };
   }
 
   const vulnerabilityService = VulnerabilityService.getInstance();
-  console.log("Returned from Server");
-  const result = await vulnerabilityService.updateVulnerabilities();
-  cacheStore = result;
+  const result = await vulnerabilityService.getLatestVulnerabilities(
+    duration,
+    ecosystem,
+    apiKey
+  );
+
   return result;
+}
+
+export async function actionPurgeCache() {
+  const vulnerabilityService = VulnerabilityService.getInstance();
+  vulnerabilityService.shouldReturnFromCache = false;
 }
 
 export async function clearVulnerabilityActionData() {
