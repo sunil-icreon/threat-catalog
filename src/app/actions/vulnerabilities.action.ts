@@ -1,7 +1,7 @@
 "use server";
 
 import { VulnerabilityService } from "@/lib/vulnerabilityService";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 let cacheStore: any = null;
 export async function actionGetVulnerabilitiesData() {
   const vulnerabilityService = VulnerabilityService.getInstance();
@@ -37,6 +37,7 @@ export async function actionFetchLatest(config: {
     apiKey
   );
 
+  revalidatePath("/");
   return result;
 }
 

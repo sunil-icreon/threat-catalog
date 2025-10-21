@@ -348,8 +348,7 @@ export const DashboardContent = (props: any) => {
                     disabled={refreshing}
                     onClick={refreshPage}
                   >
-                    <i className='bi bi-arrow-clockwise me-2'></i>
-                    {refreshing ? "Refreshing..." : "Refresh"}
+                    <i className='bi bi-arrow-clockwise'></i>
                   </Button>
 
                   <Button
