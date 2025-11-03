@@ -21,6 +21,7 @@ interface StatsCardsProps {
   totalVulnerabilities: number;
   lastUpdate: string;
   vulnerabilities: Array<IVulnerabilityType>;
+  resultKey: number;
   onVulnerabilityClick?: (vulnerability: IVulnerabilityType) => void;
 }
 
@@ -53,7 +54,6 @@ const RenderEcoSystemCards = memo(
     severityStats: SeverityStats;
   }) => {
     const { ecosystemStats, durationStats, severityStats } = props;
-    // const router = useRouter();
     const { setThreatFilter, selectedEcosystems } = useAppStore();
 
     const handleClick = (ecosystem: string) => {
@@ -62,10 +62,6 @@ const RenderEcoSystemCards = memo(
       };
 
       setThreatFilter(newFilter);
-
-      // const params = new URLSearchParams(window.location.search);
-      // params.set("ecosystem", ecosystem);
-      // router.push(`?${params.toString()}`, { scroll: false });
     };
 
     const sortedEcoSystemStat = useMemo(() => {
@@ -87,7 +83,6 @@ const RenderEcoSystemCards = memo(
             <Col md={6} lg={3} key={ecosystem}>
               <Card className='custom-card stat-card h-100'>
                 <Card.Body className='d-flex flex-column h-100'>
-                  {/* Top section with ecosystem info */}
                   <div className='d-flex flex-column gap-1'>
                     <div className='d-flex justify-content-between align-items-center mb-2'>
                       <div>
@@ -179,7 +174,7 @@ export default function StatsCards({
   severityStats,
   durationStats,
   totalVulnerabilities,
-  vulnerabilities
+  resultKey
 }: StatsCardsProps) {
   const { setThreatFilter, selectedEcosystems } = useAppStore();
   const router = useRouter();
@@ -244,7 +239,8 @@ export default function StatsCards({
       lowStat: severityStats.LOW,
       total: totalVulnerabilities
     };
-  }, [severityStats, selectedEcosystems, totalVulnerabilities]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [severityStats, selectedEcosystems, totalVulnerabilities, resultKey]);
 
   return (
     <Row className='g-4 mb-4'>
@@ -312,6 +308,7 @@ export default function StatsCards({
       )}
 
       <RenderEcoSystemCards
+        key={resultKey}
         durationStats={durationStats}
         ecosystemStats={ecosystemStats}
         severityStats={severityStats}

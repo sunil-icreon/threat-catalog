@@ -53,7 +53,7 @@ export interface ILatestQueryFilterType {
 }
 
 export const DashboardContent = (props: any) => {
-  const { vulnerabilityList } = props;
+  const { vulnerabilityList, resultKey } = props;
   const router = useRouter();
   const [vulnerabilities, setVulnerabilities] = useState<IVulnerabilityType[]>(
     vulnerabilityList.vulnerabilities
@@ -143,8 +143,8 @@ export const DashboardContent = (props: any) => {
     });
   };
 
-  const fetchVulnerabilitiesServer = () => {
-    let data: VulnerabilityResponse = vulnerabilityList;
+  const fetchVulnerabilitiesServer = (resultData: VulnerabilityResponse) => {
+    let data: VulnerabilityResponse = resultData;
     if (data.total > 0) {
       setDataInState(data.vulnerabilities, data.stats);
       cacheManager.setItem(STORAGE_KEYS.VULNERABILITY_DATA, data);
@@ -295,8 +295,8 @@ export const DashboardContent = (props: any) => {
   };
 
   useEffect(() => {
-    fetchVulnerabilitiesServer();
-  }, [vulnerabilityList]);
+    fetchVulnerabilitiesServer(vulnerabilityList);
+  }, [vulnerabilityList, resultKey]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -371,6 +371,7 @@ export const DashboardContent = (props: any) => {
             {/* Stats Cards */}
             {stats.ecosystemStats && (
               <StatsCards
+                resultKey={resultKey}
                 ecosystemStats={stats.ecosystemStats}
                 severityStats={stats.severityStats}
                 totalVulnerabilities={stats.totalVulnerabilities}
@@ -627,7 +628,8 @@ export const DashboardContent = (props: any) => {
                       className='me-2'
                     />
                     <span className='text-muted'>
-                      Fetchig live vulnerabilities, this may take few minutes...
+                      Fetching live vulnerabilities, this may take few
+                      minutes...
                     </span>
                   </div>
                 </>
