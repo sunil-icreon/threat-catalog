@@ -312,7 +312,6 @@ body {
   }
 
   &.no-label-pill {
-    display: block;
     min-height: auto;
 
     .value {
@@ -823,4 +822,8 @@ code.vulnerable {
 
 .break-all {
   word-break: break-all;
+}
+
+.v-align-middle {
+  vertical-align: middle;
 }
