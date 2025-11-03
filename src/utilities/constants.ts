@@ -20,6 +20,12 @@ export const ECOSYSTEM_NAME: IRecord = {
   nuget: "NuGet"
 };
 
+export const ECOSYSTEM_COLOR: IRecord = {
+  npm: "low",
+  maven: "green",
+  nuget: "high"
+};
+
 export const ECOSYSTEM_LIST = [
   {
     label: "NPM",

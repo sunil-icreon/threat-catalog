@@ -7,7 +7,10 @@ export default async function Dashboard() {
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <DashboardContent vulnerabilityList={vulnerabilities} />
+      <DashboardContent
+        vulnerabilityList={vulnerabilities}
+        resultKey={vulnerabilities.resultKey}
+      />
     </Suspense>
   );
 }

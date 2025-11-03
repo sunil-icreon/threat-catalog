@@ -2,7 +2,7 @@
 
 import { VulnerabilityService } from "@/lib/vulnerabilityService";
 import { revalidatePath, revalidateTag } from "next/cache";
-let cacheStore: any = null;
+
 export async function actionGetVulnerabilitiesData() {
   const vulnerabilityService = VulnerabilityService.getInstance();
 
@@ -31,6 +31,9 @@ export async function actionFetchLatest(config: {
   }
 
   const vulnerabilityService = VulnerabilityService.getInstance();
+  vulnerabilityService.shouldReturnFromCache = false;
+  vulnerabilityService.resultKey++;
+
   const result = await vulnerabilityService.getLatestVulnerabilities(
     duration,
     ecosystem,
@@ -38,6 +41,8 @@ export async function actionFetchLatest(config: {
   );
 
   revalidatePath("/");
+  revalidateTag("advisories");
+
   return result;
 }
 
