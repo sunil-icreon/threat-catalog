@@ -9,8 +9,8 @@ export const STORAGE_KEYS = {
 };
 
 export const SOURCE_NAME = {
-  GHSA: "Github Security Advisory",
-  OSV: "Open Source Vulnerabilities",
+  GHSA: "GHSA (Github Security Advisory)",
+  OSV: "OSV (Open Source Vulnerabilities)",
   Synk: "Synk"
 };
 
