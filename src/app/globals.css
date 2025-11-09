@@ -312,7 +312,7 @@ body {
   }
 
   &.no-label-pill {
-    min-height: auto;
+    /* min-height: auto; */
 
     .value {
       border-top-left-radius: 4px;
@@ -639,8 +639,9 @@ body.sidebar-open {
 }
 
 .cursor-pointer:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  font-weight: bold;
+  /* transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; */
 }
 
 /* Smooth scrolling support for older browsers */
@@ -826,4 +827,141 @@ code.vulnerable {
 
 .v-align-middle {
   vertical-align: middle;
+}
+
+/* Fixed first column for vulnerability table */
+.vulnerability-table-container {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: visible;
+  width: 100%;
+}
+
+.vulnerability-table-container.scrollable:not(.dragging) {
+  cursor: grab;
+}
+
+.vulnerability-table-container.dragging {
+  cursor: grabbing !important;
+}
+
+.vulnerability-table-container.dragging * {
+  pointer-events: none;
+}
+
+.vulnerability-table-container.dragging a,
+.vulnerability-table-container.dragging button {
+  pointer-events: none;
+}
+
+/* Prevent table from shrinking - ensure it maintains natural width */
+.vulnerability-table-container .table {
+  width: max-content !important;
+  min-width: 100%;
+  table-layout: auto;
+  margin-bottom: 0;
+}
+
+/* Ensure columns with explicit widths maintain their size and don't shrink */
+/* min-width will be set via JavaScript to match width */
+
+/* Allow Title column to wrap, but keep other columns at their specified widths */
+.vulnerability-table-container .table th:not(.fixed-first-column):not(.fixed-second-column),
+.vulnerability-table-container .table td:not(.fixed-first-column):not(.fixed-second-column) {
+  white-space: nowrap;
+}
+
+.vulnerability-table-container .fixed-first-column {
+  position: sticky;
+  left: 0;
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+  background-color: #f0f4f8;
+  z-index: 100;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.vulnerability-table-container thead .fixed-first-column {
+  background-color: #212529 !important;
+  z-index: 101;
+}
+
+.vulnerability-table-container tbody tr:nth-of-type(odd) .fixed-first-column {
+  background-color: #e8ecf0;
+}
+
+.vulnerability-table-container tbody tr:nth-of-type(even) .fixed-first-column {
+  background-color: #f0f4f8;
+}
+
+.vulnerability-table-container tbody tr:hover .fixed-first-column {
+  background-color: #d0e3f0 !important;
+}
+
+.vulnerability-table-container .fixed-second-column {
+  position: sticky;
+  left: 50px;
+  width: 400px;
+  min-width: 400px;
+  max-width: 400px;
+  background-color: #f5f7fa;
+  z-index: 100;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.vulnerability-table-container thead .fixed-second-column {
+  background-color: #212529 !important;
+  z-index: 101;
+}
+
+.vulnerability-table-container tbody tr:nth-of-type(odd) .fixed-second-column {
+  background-color: #edeff2;
+}
+
+.vulnerability-table-container tbody tr:nth-of-type(even) .fixed-second-column {
+  background-color: #f5f7fa;
+}
+
+.vulnerability-table-container tbody tr:hover .fixed-second-column {
+  background-color: #e7f3ff !important;
+}
+
+/* Top scrollbar for vulnerability table */
+.vulnerability-table-wrapper {
+  position: relative;
+}
+
+.vulnerability-table-top-scrollbar {
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 17px;
+  margin-bottom: 0;
+  border: 1px solid #dee2e6;
+  border-bottom: none;
+  border-radius: 0.375rem 0.375rem 0 0;
+  background-color: #f8f9fa;
+  display: none;
+}
+
+/* Hide the top scrollbar content visually but keep it for scrollbar calculation */
+.vulnerability-table-top-scrollbar-content {
+  height: 1px;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Ensure the main container border matches */
+.vulnerability-table-wrapper .vulnerability-table-container {
+  border-top: none;
+  border-radius: 0 0 0.375rem 0.375rem;
+}
+
+.vulnerability-table-wrapper .vulnerability-table-top-scrollbar:not([style*="display: none"]) + .vulnerability-table-container {
+  border-top: 1px solid #dee2e6;
+  border-radius: 0;
 }
