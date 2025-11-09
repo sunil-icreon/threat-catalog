@@ -69,9 +69,6 @@ const GHSA_HELPER = {
     packages: string,
     ecoSystem: string
   ) => {
-    // await sleep(1000);
-    // return [];
-
     const apiURL = `https://api.github.com/advisories?ecosystem=${ecoSystem}&affects=${packages}`;
 
     const res = await fetch(apiURL);
@@ -83,7 +80,7 @@ const GHSA_HELPER = {
     const response = await res.json();
 
     let vulnerabilities: Array<IVulnerabilityType> =
-      GHSA_HELPER.vulnerabilityMapper(response, "NPM");
+      GHSA_HELPER.vulnerabilityMapper(response, ecoSystem as IEcoSystemType);
 
     return vulnerabilities;
   },
@@ -491,17 +488,9 @@ export const fetchRSSFeeds = async (filterData: {
       filterData
     );
 
-    const [ghsa] = await Promise.allSettled([
-      ghsaPromise
-      // fetchNVD(filterData)
-      // fetchSnyk(webRenderer)
-    ]);
+    const [ghsa] = await Promise.allSettled([ghsaPromise]);
 
-    let allResults = [
-      // ...(nvd.status === "fulfilled" ? nvd.value : [])
-      // ...(synk.status === "fulfilled" ? synk.value : []),
-      ...(ghsa.status === "fulfilled" ? ghsa.value : [])
-    ];
+    let allResults = [...(ghsa.status === "fulfilled" ? ghsa.value : [])];
 
     const osvResults = await fetchOSV(filterData, publishDuration, allResults);
 
