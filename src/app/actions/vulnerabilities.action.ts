@@ -48,6 +48,7 @@ export async function actionFetchLatest(config: {
 
 export async function actionPurgeCache() {
   const vulnerabilityService = VulnerabilityService.getInstance();
+  vulnerabilityService.resultKey++;
   vulnerabilityService.shouldReturnFromCache = false;
 }
 

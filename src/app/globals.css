@@ -27,7 +27,180 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Loading Skeleton Styles */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-line {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0px,
+    #e0e0e0 40px,
+    #f0f0f0 80px
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+@media (prefers-color-scheme: dark) {
+  .skeleton-line {
+    background: linear-gradient(
+      90deg,
+      #2a2a2a 0px,
+      #3a3a3a 40px,
+      #2a2a2a 80px
+    );
+    background-size: 1000px 100%;
+  }
+}
+
+/* Focus Management - Visible Focus Indicators */
+*:focus-visible {
+  outline: 3px solid #0066cc;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #0066cc;
+  outline-offset: 2px;
+}
+
+/* Skip Navigation Link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 10000;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  *:focus-visible {
+    outline: 4px solid #000;
+    outline-offset: 3px;
+  }
+}
+
+/* Screen reader only / Visually hidden */
+.visually-hidden,
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Bootstrap Icons - Size Reservations to Prevent CLS */
+.bi {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  font-size: 1em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Icon containers - reserve space */
+i.bi {
+  min-width: 1em;
+  min-height: 1em;
+  text-align: center;
+}
+
+/* Prevent layout shift from icon font loading - Bootstrap Icons CSS handles this */
+/* Icons are loaded via CDN with font-display: block in their CSS */
+
+/* Layout Stability - Prevent CLS */
+/* Reserve space for cards */
+.custom-card {
+  min-height: 200px; /* Minimum height to prevent collapse */
+}
+
+.compact-vuln-card {
+  min-height: 180px; /* Match skeleton height */
+}
+
+/* Stats cards minimum height */
+.custom-card .card-body {
+  min-height: 100px;
+}
+
+/* Table row height reservation */
+.vulnerability-table-container tbody tr {
+  min-height: 50px;
+  height: 50px;
+}
+
+.vulnerability-table-container tbody td {
+  min-height: 50px;
+  vertical-align: middle;
+}
+
+/* Skeleton matching - ensure skeletons match real content dimensions */
+.skeleton-line {
+  min-height: 1em;
+  display: inline-block;
+}
+
+/* Prevent content insertion shifts */
+.stats-section,
+.filters-section {
+  min-height: 100px; /* Reserve space for stats */
+}
+
+/* Content visibility for off-screen content */
+.vulnerability-table-container {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px; /* Estimated height */
+}
+
+/* Prevent horizontal layout shift */
+.vulnerability-table-container .table {
+  min-width: 100%;
+}
+
+/* Dashboard layout reservations */
+main {
+  min-height: calc(100vh - 200px); /* Reserve space for header + content */
+}
+
+/* Loading state - prevent layout shift */
+[aria-busy="true"] {
+  min-height: 200px;
 }
 
 .custom-card {
@@ -703,6 +876,108 @@ body.sidebar-open {
   padding-top: 0.5rem;
 }
 
+/* Compact Vulnerability Card Redesign */
+.compact-vuln-card .card-body {
+  padding: 0.75rem !important;
+}
+
+/* Severity Badge Styles */
+.severity-badge-compact {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  padding: 0.35rem 0.65rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none !important;
+}
+
+.severity-badge-compact.severity-critical {
+  background-color: var(--critical-bg) !important;
+  color: white !important;
+}
+
+.severity-badge-compact.severity-high {
+  background-color: var(--high-bg) !important;
+  color: white !important;
+}
+
+.severity-badge-compact.severity-medium {
+  background-color: var(--moderate-bg) !important;
+  color: white !important;
+}
+
+.severity-badge-compact.severity-low {
+  background-color: var(--low-bg) !important;
+  color: var(--low-text) !important;
+}
+
+/* CVSS Badge */
+.cvss-badge-compact {
+  font-size: 0.7rem !important;
+  padding: 0.3rem 0.6rem !important;
+  font-weight: 600;
+}
+
+/* EPSS Badge */
+.epss-badge-compact {
+  font-size: 0.7rem !important;
+  padding: 0.3rem 0.6rem !important;
+  font-weight: 500;
+  border: 1px solid #dee2e6;
+}
+
+.epss-high {
+  background-color: #fff3cd !important;
+  color: #856404 !important;
+  border-color: #ffc107 !important;
+}
+
+.epss-medium {
+  background-color: #d1ecf1 !important;
+  color: #0c5460 !important;
+  border-color: #17a2b8 !important;
+}
+
+.epss-low {
+  background-color: #d4edda !important;
+  color: #155724 !important;
+  border-color: #28a745 !important;
+}
+
+/* Compact Pill */
+.compact-pill {
+  font-size: 0.7rem !important;
+  min-height: 20px !important;
+  padding: 0.15rem 0.4rem !important;
+}
+
+.compact-pill .label {
+  font-size: 0.65rem !important;
+  padding: 0.1rem 0.3rem !important;
+}
+
+.compact-pill .value {
+  font-size: 0.7rem !important;
+  padding: 0.1rem 0.3rem !important;
+}
+
+/* Compact card spacing */
+.compact-vuln-card .gap-1 {
+  gap: 0.25rem !important;
+}
+
+.compact-vuln-card .gap-2 {
+  gap: 0.5rem !important;
+}
+
+.compact-vuln-card .mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+
+.compact-vuln-card .mb-1 {
+  margin-bottom: 0.25rem !important;
+}
+
 /* Ecosystem cards layout */
 .stat-card {
   height: 100%;
@@ -835,6 +1110,12 @@ code.vulnerable {
   overflow-x: auto;
   overflow-y: visible;
   width: 100%;
+  min-height: 200px; /* Reserve space to prevent layout shift */
+}
+
+/* Virtual scrolling container - ensure proper height */
+.vulnerability-table-container table tbody {
+  position: relative;
 }
 
 .vulnerability-table-container.scrollable:not(.dragging) {
@@ -858,7 +1139,7 @@ code.vulnerable {
 .vulnerability-table-container .table {
   width: max-content !important;
   min-width: 100%;
-  table-layout: auto;
+  table-layout: fixed; /* Fixed layout ensures consistent column widths */
   margin-bottom: 0;
 }
 
@@ -869,6 +1150,25 @@ code.vulnerable {
 .vulnerability-table-container .table th:not(.fixed-first-column):not(.fixed-second-column),
 .vulnerability-table-container .table td:not(.fixed-first-column):not(.fixed-second-column) {
   white-space: nowrap;
+}
+
+/* Ensure consistent column widths - prevent width changes during virtualization */
+.vulnerability-table-container .table th,
+.vulnerability-table-container .table td {
+  box-sizing: border-box;
+}
+
+/* Ensure fixed columns maintain width */
+.vulnerability-table-container .table td.fixed-first-column {
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+}
+
+.vulnerability-table-container .table td.fixed-second-column {
+  width: 400px !important;
+  min-width: 400px !important;
+  max-width: 400px !important;
 }
 
 .vulnerability-table-container .fixed-first-column {

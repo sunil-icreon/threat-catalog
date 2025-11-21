@@ -30,11 +30,35 @@ import {
   actionPurgeCache
 } from "@/app/actions/vulnerabilities.action";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import StatsCards from "../components/StatsCards";
-import VulnerabilityDetailModal from "../components/VulnerabilityDetailModal";
-import VulnerabilityDetailSidebar from "../components/VulnerabilityDetailSidebar";
 import VulnerabilityDisplay from "../components/VulnerabilityDisplay";
-import VulnerabilityFiltersComponent from "../components/VulnerabilityFilters";
+import { PageSkeleton } from "../components/LoadingSkeleton";
+
+// Lazy load heavy components
+const VulnerabilityDetailModal = dynamic(
+  () => import("../components/VulnerabilityDetailModal"),
+  {
+    loading: () => <div aria-live='polite' aria-busy='true'>Loading modal...</div>,
+    ssr: false
+  }
+);
+
+const VulnerabilityDetailSidebar = dynamic(
+  () => import("../components/VulnerabilityDetailSidebar"),
+  {
+    loading: () => <div aria-live='polite' aria-busy='true'>Loading sidebar...</div>,
+    ssr: false
+  }
+);
+
+const VulnerabilityFiltersComponent = dynamic(
+  () => import("../components/VulnerabilityFilters"),
+  {
+    loading: () => <div className='mb-3'>Loading filters...</div>,
+    ssr: false
+  }
+);
 import {
   IEcoSystemType,
   IRecord,
@@ -318,11 +342,17 @@ export const DashboardContent = (props: any) => {
   }, [showMobileModal, showSidebar]);
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<PageSkeleton />}>
       <>
         <div className='min-vh-100 bg-light'>
           <Header />
-          <Container fluid className='py-4'>
+          <main id='main-content' tabIndex={-1}>
+            <Container fluid className='py-4' aria-busy={loading || refreshing}>
+              <div aria-live='polite' aria-atomic='true' className='sr-only'>
+                {loading && "Loading vulnerabilities"}
+                {refreshing && "Refreshing data"}
+                {error && `Error: ${error}`}
+              </div>
             <div className='mb-1'>
               <div className='d-flex flex-wrap justify-content-between gap-1'>
                 <div>
@@ -335,8 +365,9 @@ export const DashboardContent = (props: any) => {
                     <Button
                       variant='outline'
                       onClick={() => setShowModal(true)}
+                      aria-label='Show information about the dashboard'
                     >
-                      <i className='bi bi-info-circle'></i>
+                      <i className='bi bi-info-circle' aria-hidden='true'></i>
                     </Button>
                   </p>
                 </div>
@@ -347,8 +378,10 @@ export const DashboardContent = (props: any) => {
                     size='sm'
                     disabled={refreshing}
                     onClick={refreshPage}
+                    aria-label='Refresh vulnerability data'
+                    aria-busy={refreshing}
                   >
-                    <i className='bi bi-arrow-clockwise'></i>
+                    <i className='bi bi-arrow-clockwise' aria-hidden='true'></i>
                   </Button>
 
                   <Button
@@ -356,8 +389,9 @@ export const DashboardContent = (props: any) => {
                     className='d-flex align-items-center  ms-2'
                     size='sm'
                     onClick={handleShowFetchModal}
+                    aria-label='Fetch latest vulnerabilities'
                   >
-                    <i className={`bi bi-gear me-2 `}></i>
+                    <i className={`bi bi-gear me-2`} aria-hidden='true'></i>
                     Fetch Latest
                   </Button>
 
@@ -369,22 +403,26 @@ export const DashboardContent = (props: any) => {
             </div>
 
             {/* Stats Cards */}
-            {stats.ecosystemStats && (
-              <StatsCards
-                resultKey={resultKey}
-                ecosystemStats={stats.ecosystemStats}
-                severityStats={stats.severityStats}
-                totalVulnerabilities={stats.totalVulnerabilities}
-                lastUpdate={stats.lastRefresh}
-                durationStats={stats.durationStats}
-                vulnerabilities={vulnerabilities}
-                onVulnerabilityClick={handleVulnerabilityClick}
-              />
-            )}
+            <div className='stats-section' style={{ minHeight: '120px' }}>
+              {stats.ecosystemStats && (
+                <StatsCards
+                  resultKey={resultKey}
+                  ecosystemStats={stats.ecosystemStats}
+                  severityStats={stats.severityStats}
+                  totalVulnerabilities={stats.totalVulnerabilities}
+                  lastUpdate={stats.lastRefresh}
+                  durationStats={stats.durationStats}
+                  vulnerabilities={vulnerabilities}
+                  onVulnerabilityClick={handleVulnerabilityClick}
+                />
+              )}
+            </div>
             {/* Filters */}
-            <VulnerabilityFiltersComponent
-              onFiltersChange={handleFiltersChange}
-            />
+            <div className='filters-section' style={{ minHeight: '100px' }}>
+              <VulnerabilityFiltersComponent
+                onFiltersChange={handleFiltersChange}
+              />
+            </div>
             {/* Error State */}
             <ToastContainer
               position='top-end'
@@ -425,10 +463,12 @@ export const DashboardContent = (props: any) => {
                   </h2>
                 </div>
 
-                <VulnerabilityDisplay
-                  vulnerabilities={filteredVuls}
-                  onVulnerabilityClick={handleVulnerabilityClick}
-                />
+                <div style={{ minHeight: filteredVuls.length > 0 ? '400px' : '200px' }}>
+                  <VulnerabilityDisplay
+                    vulnerabilities={filteredVuls}
+                    onVulnerabilityClick={handleVulnerabilityClick}
+                  />
+                </div>
               </div>
             )}
             {/* Empty State */}
@@ -447,8 +487,9 @@ export const DashboardContent = (props: any) => {
                 </p>
               </div>
             )}
-          </Container>
-        </div>
+            </Container>
+          </main>
+          </div>
 
         {showModal && (
           <Modal
