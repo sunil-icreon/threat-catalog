@@ -1,5 +1,6 @@
 import { findVulnerabilitiesInPackage } from "@/lib/scanner";
 import fs from "fs";
+import crypto from "crypto";
 
 import { IRecord } from "@/types/vulnerability";
 import { NextRequest, NextResponse } from "next/server";
@@ -17,26 +18,31 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.json(result);
 
-    // response.headers.set(
-    //   "Cache-Control",
-    //   `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`
-    // );
-    // response.headers.set("CDN-Cache-Control", `max-age=${CACHE_DURATION}`);
-    // response.headers.set(
-    //   "Vercel-CDN-Cache-Control",
-    //   `max-age=${CACHE_DURATION}`
-    // );
-    // response.headers.set("Vercel-Cache-Tags", CACHE_TAGS.join(","));
+    // Set cache headers for better performance
+    response.headers.set(
+      "Cache-Control",
+      `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`
+    );
+    response.headers.set("CDN-Cache-Control", `max-age=${CACHE_DURATION}`);
+    response.headers.set(
+      "Vercel-CDN-Cache-Control",
+      `max-age=${CACHE_DURATION}`
+    );
+    response.headers.set("Vercel-Cache-Tags", CACHE_TAGS.join(","));
 
-    // // Add ETag for conditional requests
-    // const etag = `"${Buffer.from(JSON.stringify(result)).toString("base64")}"`;
-    // response.headers.set("ETag", etag);
+    // Add ETag for conditional requests - optimized to use lightweight hash
+    // Instead of serializing entire response, use metadata for fast ETag generation
+    // Use resultKey from service instance + total + lastRefresh timestamp
+    const resultKey = vulnerabilityService.resultKey || 0;
+    const etagContent = `${resultKey}-${result.total || 0}-${result.stats?.lastRefresh || ''}`;
+    const etag = `"${crypto.createHash('md5').update(etagContent).digest('hex')}"`;
+    response.headers.set("ETag", etag);
 
     // Check if client has cached version
-    // const ifNoneMatch = request.headers.get("if-none-match");
-    // if (ifNoneMatch === etag) {
-    //   return new NextResponse(null, { status: 304 });
-    // }
+    const ifNoneMatch = request.headers.get("if-none-match");
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, { status: 304 });
+    }
 
     return response;
   } catch (error) {
@@ -192,27 +198,13 @@ export async function POST(request: NextRequest) {
       now: Date.now()
     });
 
-    // // Set cache headers
-    // response.headers.set(
-    //   "Cache-Control",
-    //   `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=60`
-    // );
-    // response.headers.set("CDN-Cache-Control", `max-age=${CACHE_DURATION}`);
-    // response.headers.set(
-    //   "Vercel-CDN-Cache-Control",
-    //   `max-age=${CACHE_DURATION}`
-    // );
-    // response.headers.set("Vercel-Cache-Tags", CACHE_TAGS.join(","));
-
-    // // Add ETag for conditional requests
-    // const etag = `"${Buffer.from(JSON.stringify(result)).toString("base64")}"`;
-    // response.headers.set("ETag", etag);
-
-    // // Check if client has cached version
-    // const ifNoneMatch = request.headers.get("if-none-match");
-    // if (ifNoneMatch === etag) {
-    //   return new NextResponse(null, { status: 304 });
-    // }
+    // Set cache headers for POST responses (shorter duration for dynamic content)
+    const postCacheDuration = 3600; // 1 hour for POST responses
+    response.headers.set(
+      "Cache-Control",
+      `public, s-maxage=${postCacheDuration}, stale-while-revalidate=30`
+    );
+    response.headers.set("CDN-Cache-Control", `max-age=${postCacheDuration}`);
 
     return response;
   } catch (error) {
