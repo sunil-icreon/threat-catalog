@@ -1,6 +1,6 @@
 import { IEcoSystemType } from "@/types/vulnerability";
 import { getPackageURL } from "@/utilities/util";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 
 interface IPackageDetailLinkProps {
   ecoSystem: string;
@@ -9,7 +9,7 @@ interface IPackageDetailLinkProps {
   version?: string;
   className?: string;
 }
-export const PackageDetailLink = (props: IPackageDetailLinkProps) => {
+export const PackageDetailLink = memo((props: IPackageDetailLinkProps) => {
   const { ecoSystem, packageName, version, label, className } = props;
 
   const url = useMemo(() => {
@@ -29,4 +29,6 @@ export const PackageDetailLink = (props: IPackageDetailLinkProps) => {
       <span className='break-all'>{label ?? packageName}</span>
     </a>
   );
-};
+});
+
+PackageDetailLink.displayName = "PackageDetailLink";

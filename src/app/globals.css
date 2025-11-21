@@ -703,6 +703,108 @@ body.sidebar-open {
   padding-top: 0.5rem;
 }
 
+/* Compact Vulnerability Card Redesign */
+.compact-vuln-card .card-body {
+  padding: 0.75rem !important;
+}
+
+/* Severity Badge Styles */
+.severity-badge-compact {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  padding: 0.35rem 0.65rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none !important;
+}
+
+.severity-badge-compact.severity-critical {
+  background-color: var(--critical-bg) !important;
+  color: white !important;
+}
+
+.severity-badge-compact.severity-high {
+  background-color: var(--high-bg) !important;
+  color: white !important;
+}
+
+.severity-badge-compact.severity-medium {
+  background-color: var(--moderate-bg) !important;
+  color: white !important;
+}
+
+.severity-badge-compact.severity-low {
+  background-color: var(--low-bg) !important;
+  color: var(--low-text) !important;
+}
+
+/* CVSS Badge */
+.cvss-badge-compact {
+  font-size: 0.7rem !important;
+  padding: 0.3rem 0.6rem !important;
+  font-weight: 600;
+}
+
+/* EPSS Badge */
+.epss-badge-compact {
+  font-size: 0.7rem !important;
+  padding: 0.3rem 0.6rem !important;
+  font-weight: 500;
+  border: 1px solid #dee2e6;
+}
+
+.epss-high {
+  background-color: #fff3cd !important;
+  color: #856404 !important;
+  border-color: #ffc107 !important;
+}
+
+.epss-medium {
+  background-color: #d1ecf1 !important;
+  color: #0c5460 !important;
+  border-color: #17a2b8 !important;
+}
+
+.epss-low {
+  background-color: #d4edda !important;
+  color: #155724 !important;
+  border-color: #28a745 !important;
+}
+
+/* Compact Pill */
+.compact-pill {
+  font-size: 0.7rem !important;
+  min-height: 20px !important;
+  padding: 0.15rem 0.4rem !important;
+}
+
+.compact-pill .label {
+  font-size: 0.65rem !important;
+  padding: 0.1rem 0.3rem !important;
+}
+
+.compact-pill .value {
+  font-size: 0.7rem !important;
+  padding: 0.1rem 0.3rem !important;
+}
+
+/* Compact card spacing */
+.compact-vuln-card .gap-1 {
+  gap: 0.25rem !important;
+}
+
+.compact-vuln-card .gap-2 {
+  gap: 0.5rem !important;
+}
+
+.compact-vuln-card .mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+
+.compact-vuln-card .mb-1 {
+  margin-bottom: 0.25rem !important;
+}
+
 /* Ecosystem cards layout */
 .stat-card {
   height: 100%;
@@ -837,6 +939,11 @@ code.vulnerable {
   width: 100%;
 }
 
+/* Virtual scrolling container - ensure proper height */
+.vulnerability-table-container table tbody {
+  position: relative;
+}
+
 .vulnerability-table-container.scrollable:not(.dragging) {
   cursor: grab;
 }
@@ -858,7 +965,7 @@ code.vulnerable {
 .vulnerability-table-container .table {
   width: max-content !important;
   min-width: 100%;
-  table-layout: auto;
+  table-layout: fixed; /* Fixed layout ensures consistent column widths */
   margin-bottom: 0;
 }
 
@@ -869,6 +976,25 @@ code.vulnerable {
 .vulnerability-table-container .table th:not(.fixed-first-column):not(.fixed-second-column),
 .vulnerability-table-container .table td:not(.fixed-first-column):not(.fixed-second-column) {
   white-space: nowrap;
+}
+
+/* Ensure consistent column widths - prevent width changes during virtualization */
+.vulnerability-table-container .table th,
+.vulnerability-table-container .table td {
+  box-sizing: border-box;
+}
+
+/* Ensure fixed columns maintain width */
+.vulnerability-table-container .table td.fixed-first-column {
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+}
+
+.vulnerability-table-container .table td.fixed-second-column {
+  width: 400px !important;
+  min-width: 400px !important;
+  max-width: 400px !important;
 }
 
 .vulnerability-table-container .fixed-first-column {

@@ -1,17 +1,22 @@
 import { IVulnerabilityType } from "@/types/vulnerability";
+import { memo, useCallback } from "react";
 import { Button } from "react-bootstrap";
 
 interface IAdvisoryDetailLinkProps {
   vulnerability: IVulnerabilityType;
   onVulnerabilityClick?: (vulnerability: IVulnerabilityType) => void;
 }
-export const AdvisoryDetailLink = (props: IAdvisoryDetailLinkProps) => {
+export const AdvisoryDetailLink = memo((props: IAdvisoryDetailLinkProps) => {
   const { vulnerability, onVulnerabilityClick } = props;
 
-  const handleClick = (e: any) => {
-    e.preventDefault();
-    onVulnerabilityClick && onVulnerabilityClick(vulnerability);
-  };
+  const handleClick = useCallback(
+    (e: any) => {
+      e.preventDefault();
+      onVulnerabilityClick && onVulnerabilityClick(vulnerability);
+    },
+    [vulnerability, onVulnerabilityClick]
+  );
+
   return (
     <>
       <Button
@@ -25,4 +30,6 @@ export const AdvisoryDetailLink = (props: IAdvisoryDetailLinkProps) => {
       </Button>
     </>
   );
-};
+});
+
+AdvisoryDetailLink.displayName = "AdvisoryDetailLink";

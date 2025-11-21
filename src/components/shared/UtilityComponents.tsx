@@ -16,7 +16,7 @@ interface ICountPillProps {
   variant: IVariantType;
   className?: string;
 }
-export const CountPill = (props: ICountPillProps) => {
+export const CountPill = memo((props: ICountPillProps) => {
   const { label, count, variant, className } = props;
   return (
     <div
@@ -28,7 +28,9 @@ export const CountPill = (props: ICountPillProps) => {
       <div className='value'>{count}</div>
     </div>
   );
-};
+});
+
+CountPill.displayName = "CountPill";
 
 interface ISeverityCountProps {
   label?: string;
@@ -97,7 +99,7 @@ interface IEPSSProps {
   epss: EPSSData;
   displayType: "table" | "card";
 }
-export const RenderEPSS = (props: IEPSSProps) => {
+export const RenderEPSS = memo((props: IEPSSProps) => {
   const { epss, displayType } = props;
 
   const epssData = getEPSSRisk(epss);
@@ -118,7 +120,9 @@ export const RenderEPSS = (props: IEPSSProps) => {
       {epssData.score}%
     </div>
   );
-};
+});
+
+RenderEPSS.displayName = "RenderEPSS";
 
 interface IAffectedPillProps {
   affectedVersions: Array<string> | undefined;
@@ -191,7 +195,7 @@ interface IAffectedVersionTagsProps {
   affectedVersions: string[];
 }
 
-export const AffectedVersionTags = (props: IAffectedVersionTagsProps) => {
+export const AffectedVersionTags = memo((props: IAffectedVersionTagsProps) => {
   const { affectedVersions } = props;
   return (
     <div className='affected-list d-flex flex-wrap gap-1'>
@@ -204,4 +208,6 @@ export const AffectedVersionTags = (props: IAffectedVersionTagsProps) => {
       })}
     </div>
   );
-};
+});
+
+AffectedVersionTags.displayName = "AffectedVersionTags";
