@@ -1,8 +1,11 @@
 "use client";
 
-import { Container, Accordion, Row, Col, Badge } from "react-bootstrap";
-import Header from "@/components/Header";
 import GlossaryIndex from "@/components/GlossaryIndex";
+import GlossarySearch from "@/components/GlossarySearch";
+import Header from "@/components/Header";
+import { useSearchParams } from "next/navigation";
+import { memo, Suspense, useCallback, useEffect, useMemo } from "react";
+import { Accordion, Badge, Col, Container, Row } from "react-bootstrap";
 
 interface GlossaryTerm {
   term: string;
@@ -250,118 +253,248 @@ const categoryBadgeColors: Record<string, string> = {
   "Status & Metadata": "info"
 };
 
-export default function GlossaryPage() {
-  const groupedTerms = categories.map((category) => ({
-    category,
-    terms: glossaryTerms.filter((term) => term.category === category)
-  }));
+// Pre-compile regex pattern for highlighting (single regex is much faster)
+const IMPORTANT_TERMS = [
+  "CVE",
+  "CVSS",
+  "EPSS",
+  "CWE",
+  "Zero-Day",
+  "zero-day",
+  "Log4Shell",
+  "Critical",
+  "CRITICAL",
+  "High",
+  "HIGH",
+  "Medium",
+  "MEDIUM",
+  "Low",
+  "LOW",
+  "Network",
+  "Local",
+  "Physical",
+  "Adjacent Network",
+  "Remote code execution",
+  "SQL injection",
+  "Cross-site Scripting",
+  "XSS",
+  "Denial of Service",
+  "DDoS",
+  "Authentication",
+  "Authorization",
+  "Privilege",
+  "Exploit",
+  "Vulnerability",
+  "Patch",
+  "Mitigation",
+  "Workaround",
+  "Active",
+  "ACTIVE",
+  "Resolved",
+  "RESOLVED",
+  "Mitigated",
+  "MITIGATED"
+];
 
-  // Function to highlight important terms in text
-  const highlightTerms = (text: string) => {
-    const importantTerms = [
-      "CVE",
-      "CVSS",
-      "EPSS",
-      "CWE",
-      "Zero-Day",
-      "zero-day",
-      "Log4Shell",
-      "Critical",
-      "CRITICAL",
-      "High",
-      "HIGH",
-      "Medium",
-      "MEDIUM",
-      "Low",
-      "LOW",
-      "Network",
-      "Local",
-      "Physical",
-      "Adjacent Network",
-      "Remote code execution",
-      "SQL injection",
-      "Cross-site Scripting",
-      "XSS",
-      "Denial of Service",
-      "DDoS",
-      "Authentication",
-      "Authorization",
-      "Privilege",
-      "Exploit",
-      "Vulnerability",
-      "Patch",
-      "Mitigation",
-      "Workaround",
-      "Active",
-      "ACTIVE",
-      "Resolved",
-      "RESOLVED",
-      "Mitigated",
-      "MITIGATED"
-    ];
+// Create a single optimized regex pattern
+const HIGHLIGHT_REGEX = new RegExp(
+  `\\b(${IMPORTANT_TERMS.map((t) =>
+    t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  ).join("|")})\\b`,
+  "gi"
+);
 
-    let highlightedText = text;
-    importantTerms.forEach((term) => {
-      const regex = new RegExp(`\\b${term}\\b`, "gi");
-      highlightedText = highlightedText.replace(
-        regex,
-        (match) => `<strong class="text-dark fw-bold">${match}</strong>`
-      );
+// Optimized highlight function using single regex
+const highlightTerms = (text: string): string => {
+  return text.replace(
+    HIGHLIGHT_REGEX,
+    (match) => `<strong class="text-dark fw-bold">${match}</strong>`
+  );
+};
+
+// Pre-compute highlighted text for all terms
+const precomputeHighlightedTerms = (terms: typeof glossaryTerms) => {
+  const cache = new Map<string, { description: string; example?: string }>();
+  terms.forEach((term) => {
+    cache.set(term.term, {
+      description: highlightTerms(term.description),
+      example: term.example ? highlightTerms(term.example) : undefined
     });
+  });
+  return cache;
+};
 
-    return highlightedText;
-  };
+// Pre-compute once at module level
+const highlightedTermsCache = precomputeHighlightedTerms(glossaryTerms);
 
-  const handleTermClick = (term: string, category: string) => {
-    // Find the accordion item for this category
-    const categoryIndex = categories.indexOf(category);
-    if (categoryIndex !== -1) {
-      const accordionItem = document.querySelector(
-        `[data-accordion-key="${categoryIndex}"]`
-      ) as HTMLElement;
-      if (accordionItem) {
-        // Expand the accordion if collapsed
-        const accordionButton = accordionItem.querySelector(
-          ".accordion-button"
+// Memoized term card component to prevent unnecessary re-renders
+const TermCard = memo(
+  ({
+    term,
+    categoryBadgeColor
+  }: {
+    term: GlossaryTerm;
+    categoryBadgeColor: string;
+  }) => {
+    const highlighted = highlightedTermsCache.get(term.term);
+
+    return (
+      <div className='h-100 p-3 border rounded'>
+        <div className='d-flex align-items-start mb-2'>
+          <Badge
+            bg={categoryBadgeColor}
+            className='me-2 flex-shrink-0 fw-semibold'
+            style={{ fontSize: "0.75rem" }}
+          >
+            {term.term}
+          </Badge>
+          {term.link && (
+            <a
+              href={term.link}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='text-decoration-none ms-auto'
+              title={`Learn more about ${term.term}`}
+              aria-label={`External link to ${term.fullName}`}
+            >
+              <i className='bi bi-box-arrow-up-right' aria-hidden='true'></i>
+            </a>
+          )}
+        </div>
+        <div className='small text-muted mb-2 fw-semibold'>{term.fullName}</div>
+        <p
+          className='small mb-2'
+          style={{ lineHeight: "1.6" }}
+          dangerouslySetInnerHTML={{
+            __html: highlighted?.description || term.description
+          }}
+        />
+        {term.example && (
+          <div className='mt-3 pt-2 border-top'>
+            <div className='small fw-semibold text-primary mb-1'>
+              <i className='bi bi-lightbulb me-1'></i>
+              For Example:
+            </div>
+            <p
+              className='small mb-0 text-muted'
+              style={{ lineHeight: "1.6", fontStyle: "italic" }}
+              dangerouslySetInnerHTML={{
+                __html: highlighted?.example || term.example
+              }}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+TermCard.displayName = "TermCard";
+
+function GlossaryPageContent() {
+  const searchParams = useSearchParams();
+
+  // Memoize grouped terms calculation
+  const groupedTerms = useMemo(
+    () =>
+      categories.map((category) => ({
+        category,
+        terms: glossaryTerms.filter((term) => term.category === category)
+      })),
+    []
+  );
+
+  // Memoize terms list for GlossaryIndex
+  const indexTerms = useMemo(
+    () =>
+      glossaryTerms.map((t) => ({
+        term: t.term,
+        category: t.category
+      })),
+    []
+  );
+
+  // Memoize handleTermClick to prevent re-renders
+  const handleTermClick = useCallback(
+    (term: string, category: string) => {
+      // Find the accordion item for this category
+      const categoryIndex = categories.indexOf(category);
+      if (categoryIndex !== -1) {
+        const accordionItem = document.querySelector(
+          `[data-accordion-key="${categoryIndex}"]`
         ) as HTMLElement;
-        if (accordionButton && accordionButton.classList.contains("collapsed")) {
-          accordionButton.click();
-        }
-
-        // Scroll to the accordion item
-        setTimeout(() => {
-          accordionItem.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-          });
-
-          // If a specific term was clicked, try to highlight it
-          if (term !== category) {
-            setTimeout(() => {
-              const termElement = Array.from(
-                accordionItem.querySelectorAll(".border.rounded")
-              ).find((el) => {
-                const badge = el.querySelector(".badge");
-                return badge?.textContent?.trim() === term;
-              }) as HTMLElement;
-
-              if (termElement) {
-                termElement.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center"
-                });
-                termElement.style.transition = "all 0.3s";
-                termElement.style.boxShadow = "0 0 0 3px rgba(13, 110, 253, 0.3)";
-                setTimeout(() => {
-                  termElement.style.boxShadow = "";
-                }, 2000);
-              }
-            }, 300);
+        if (accordionItem) {
+          // Expand the accordion if collapsed
+          const accordionButton = accordionItem.querySelector(
+            ".accordion-button"
+          ) as HTMLElement;
+          if (
+            accordionButton &&
+            accordionButton.classList.contains("collapsed")
+          ) {
+            accordionButton.click();
           }
-        }, 100);
+
+          // Scroll to the accordion item
+          setTimeout(() => {
+            accordionItem.scrollIntoView({
+              behavior: "smooth",
+              block: "center"
+            });
+
+            // If a specific term was clicked, try to highlight it
+            if (term !== category) {
+              setTimeout(() => {
+                const termElement = Array.from(
+                  accordionItem.querySelectorAll(".border.rounded")
+                ).find((el) => {
+                  const badge = el.querySelector(".badge");
+                  return badge?.textContent?.trim() === term;
+                }) as HTMLElement;
+
+                if (termElement) {
+                  termElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                  });
+                  termElement.style.transition = "all 0.3s";
+                  termElement.style.boxShadow =
+                    "0 0 0 3px rgba(13, 110, 253, 0.3)";
+                  termElement.style.backgroundColor =
+                    "rgba(184, 184, 184, 0.3)";
+                  setTimeout(() => {
+                    termElement.style.boxShadow = "";
+                    termElement.style.backgroundColor = "transparent";
+                  }, 2000);
+                }
+              }, 300);
+            }
+          }, 100);
+        }
+      }
+    },
+    [categories]
+  );
+
+  // Handle "term" query parameter on page load
+  useEffect(() => {
+    const termParam = searchParams.get("term");
+    if (termParam) {
+      // Find the term in glossaryTerms
+      const foundTerm = glossaryTerms.find(
+        (t) => t.term.toLowerCase() === termParam.toLowerCase()
+      );
+
+      if (foundTerm) {
+        // Wait for DOM to be ready
+        const timeoutId = setTimeout(() => {
+          handleTermClick(foundTerm.term, foundTerm.category);
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
       }
     }
-  };
+  }, [searchParams, handleTermClick]);
 
   return (
     <>
@@ -370,11 +503,11 @@ export default function GlossaryPage() {
         <Row>
           <Col>
             <div className='mb-4'>
-              <h1 className='h2 mb-2'>
+              <h1 className='h2 mb-2 text-color-dark'>
                 <i className='bi bi-book me-2' aria-hidden='true'></i>
                 Security Terms Glossary
               </h1>
-              <p className='text-muted'>
+              <p className='text-muted' style={{ color: "#495057" }}>
                 Brief explanations of security terminology and jargon used
                 throughout the vulnerability display interface.
               </p>
@@ -382,14 +515,33 @@ export default function GlossaryPage() {
 
             <GlossaryIndex
               categories={categories}
+              terms={indexTerms}
+              onTermClick={handleTermClick}
+            />
+
+            <GlossarySearch
               terms={glossaryTerms.map((t) => ({
                 term: t.term,
+                fullName: t.fullName,
                 category: t.category
               }))}
               onTermClick={handleTermClick}
             />
 
-            <Accordion defaultActiveKey='0' className='mb-4'>
+            <style
+              dangerouslySetInnerHTML={{
+                __html: `
+                .glossary-accordion .accordion-button:not(.collapsed) {
+                  background-color: #f8f9fa !important;
+                  color: #212529 !important;
+                }
+                .glossary-accordion .accordion-button:not(.collapsed)::after {
+                  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23212529'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+                }
+              `
+              }}
+            />
+            <Accordion defaultActiveKey='0' className='mb-4 glossary-accordion'>
               {groupedTerms.map(({ category, terms }, index) => (
                 <Accordion.Item
                   key={category}
@@ -406,58 +558,13 @@ export default function GlossaryPage() {
                   <Accordion.Body className='py-3'>
                     <Row className='g-3'>
                       {terms.map((term) => (
-                        <Col key={term.term} xs={12} md={6} lg={4}>
-                          <div className='h-100 p-3 border rounded'>
-                            <div className='d-flex align-items-start mb-2'>
-                              <Badge
-                                bg={categoryBadgeColors[term.category] || "primary"}
-                                className='me-2 flex-shrink-0 fw-semibold'
-                                style={{ fontSize: "0.75rem" }}
-                              >
-                                {term.term}
-                              </Badge>
-                              {term.link && (
-                                <a
-                                  href={term.link}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
-                                  className='text-decoration-none ms-auto'
-                                  title={`Learn more about ${term.term}`}
-                                  aria-label={`External link to ${term.fullName}`}
-                                >
-                                  <i
-                                    className='bi bi-box-arrow-up-right'
-                                    aria-hidden='true'
-                                  ></i>
-                                </a>
-                              )}
-                            </div>
-                            <div className='small text-muted mb-2 fw-semibold'>
-                              {term.fullName}
-                            </div>
-                            <p
-                              className='small mb-2'
-                              style={{ lineHeight: "1.6" }}
-                              dangerouslySetInnerHTML={{
-                                __html: highlightTerms(term.description)
-                              }}
-                            />
-                            {term.example && (
-                              <div className='mt-3 pt-2 border-top'>
-                                <div className='small fw-semibold text-primary mb-1'>
-                                  <i className='bi bi-lightbulb me-1'></i>
-                                  Real-world example:
-                                </div>
-                                <p
-                                  className='small mb-0 text-muted'
-                                  style={{ lineHeight: "1.6", fontStyle: "italic" }}
-                                  dangerouslySetInnerHTML={{
-                                    __html: highlightTerms(term.example)
-                                  }}
-                                />
-                              </div>
-                            )}
-                          </div>
+                        <Col key={term.term} xs={12} md={6} lg={12}>
+                          <TermCard
+                            term={term}
+                            categoryBadgeColor={
+                              categoryBadgeColors[term.category] || "primary"
+                            }
+                          />
                         </Col>
                       ))}
                     </Row>
@@ -472,3 +579,24 @@ export default function GlossaryPage() {
   );
 }
 
+export default function GlossaryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          className='d-flex justify-content-center align-items-center'
+          style={{ minHeight: "100vh" }}
+        >
+          <div className='text-center'>
+            <div className='spinner-border text-primary' role='status'>
+              <span className='visually-hidden'>Loading...</span>
+            </div>
+            <p className='mt-2 text-muted'>Loading glossary...</p>
+          </div>
+        </div>
+      }
+    >
+      <GlossaryPageContent />
+    </Suspense>
+  );
+}
