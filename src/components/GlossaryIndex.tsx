@@ -22,6 +22,38 @@ const categoryColors: Record<string, string> = {
   "Status & Metadata": "info"
 };
 
+// Light, professional colors for mobile
+const categoryLightColors: Record<
+  string,
+  { bg: string; border: string; text: string }
+> = {
+  Identifiers: {
+    bg: "#e7f1ff",
+    border: "#b3d7ff",
+    text: "#0a58ca"
+  },
+  "Scoring Systems": {
+    bg: "#f8e8e8",
+    border: "#f0c0c0",
+    text: "#842029"
+  },
+  "Vulnerability Types": {
+    bg: "#fff3cd",
+    border: "#ffe69c",
+    text: "#664d03"
+  },
+  "Package Information": {
+    bg: "#d1e7dd",
+    border: "#a3cfbb",
+    text: "#0f5132"
+  },
+  "Status & Metadata": {
+    bg: "#cff4fc",
+    border: "#9eeaf9",
+    text: "#055160"
+  }
+};
+
 export default function GlossaryIndex({
   categories,
   terms,
@@ -45,50 +77,85 @@ export default function GlossaryIndex({
   }));
 
   if (isMobile) {
-    // Mobile: Card layout
+    // Mobile: Card layout with light, professional colors
     return (
       <div className='mb-4'>
-        {groupedTerms.map(({ category, terms }) => (
-          <Card key={category} className='mb-3 shadow-sm'>
-            <Card.Header
-              className={`bg-${categoryColors[category]} text-white`}
-            >
-              <h6 className='mb-0 fw-bold'>{category}</h6>
-            </Card.Header>
-            <Card.Body className='p-2'>
-              {terms.map((term) => (
-                <div
-                  key={term.term}
-                  className='p-2 mb-2 border rounded'
-                  style={{
-                    cursor: "pointer",
-                    transition: "all 0.2s"
-                  }}
-                  onClick={() => onTermClick(term.term, term.category)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f8f9fa";
-                    e.currentTarget.style.transform = "translateX(4px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "";
-                    e.currentTarget.style.transform = "";
-                  }}
+        {groupedTerms.map(({ category, terms }) => {
+          const lightColor = categoryLightColors[category] || {
+            bg: "#f8f9fa",
+            border: "#dee2e6",
+            text: "#495057"
+          };
+
+          return (
+            <Card key={category} className='mb-3 shadow-sm border-0'>
+              <Card.Header
+                style={{
+                  backgroundColor: lightColor.bg,
+                  borderBottom: `2px solid ${lightColor.border}`,
+                  padding: "12px 16px"
+                }}
+              >
+                <h6
+                  className='mb-0 fw-semibold'
+                  style={{ color: lightColor.text, fontSize: "0.9rem" }}
                 >
-                  <div className='d-flex align-items-center'>
-                    <Badge
-                      bg={categoryColors[category]}
-                      className='me-2'
-                      style={{ fontSize: "0.75rem" }}
-                    >
-                      {term.term}
-                    </Badge>
-                    <i className='bi bi-arrow-right ms-auto text-muted'></i>
+                  <i
+                    className='bi bi-tag-fill me-2'
+                    style={{ fontSize: "0.85rem" }}
+                  ></i>
+                  {category}
+                </h6>
+              </Card.Header>
+              <Card.Body className='p-3' style={{ backgroundColor: "#ffffff" }}>
+                {terms.map((term) => (
+                  <div
+                    key={term.term}
+                    className='p-3 mb-2 rounded'
+                    style={{
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      backgroundColor: "#f8f9fa",
+                      border: `1px solid ${lightColor.border}`,
+                      borderLeft: `3px solid ${lightColor.border}`
+                    }}
+                    onClick={() => onTermClick(term.term, term.category)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = lightColor.bg;
+                      e.currentTarget.style.borderLeftColor = lightColor.text;
+                      e.currentTarget.style.transform = "translateX(4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f8f9fa";
+                      e.currentTarget.style.borderLeftColor = lightColor.border;
+                      e.currentTarget.style.transform = "";
+                    }}
+                  >
+                    <div className='d-flex align-items-center'>
+                      <span
+                        className='fw-medium'
+                        style={{
+                          color: lightColor.text,
+                          fontSize: "0.875rem"
+                        }}
+                      >
+                        {term.term}
+                      </span>
+                      <i
+                        className='bi bi-chevron-right ms-auto'
+                        style={{
+                          color: lightColor.text,
+                          fontSize: "0.75rem",
+                          opacity: 0.6
+                        }}
+                      ></i>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </Card.Body>
-          </Card>
-        ))}
+                ))}
+              </Card.Body>
+            </Card>
+          );
+        })}
       </div>
     );
   }
