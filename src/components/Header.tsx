@@ -9,18 +9,48 @@ export default function Header() {
       <a href='#main-content' className='skip-link'>
         Skip to main content
       </a>
-      <Navbar bg='dark' variant='dark' expand='lg' className='shadow-sm' role='navigation' aria-label='Main navigation'>
+      <Navbar
+        bg='dark'
+        variant='dark'
+        expand='lg'
+        className='shadow-sm'
+        role='navigation'
+        aria-label='Main navigation'
+      >
         <Container fluid>
-          <Navbar.Brand href='/' className='fw-bold' aria-label='Threat Catalog home'>
+          <Navbar.Brand
+            href='/'
+            className='fw-bold'
+            aria-label='Threat Catalog home'
+          >
             <i className='bi bi-shield-check me-2' aria-hidden='true'></i>
             Threat Catalog
           </Navbar.Brand>
-          <Navbar.Toggle aria-controls='basic-navbar-nav' aria-label='Toggle navigation menu' />
+          <Navbar.Toggle
+            aria-controls='basic-navbar-nav'
+            aria-label='Toggle navigation menu'
+          />
           <Navbar.Collapse id='basic-navbar-nav'>
             <Nav className='me-auto' role='menubar'>
-              <Nav.Link as={Link} href='/' className='fw-medium' role='menuitem' aria-label='Go to dashboard'>
+              <Nav.Link
+                as={Link}
+                href='/'
+                className='fw-medium'
+                role='menuitem'
+                aria-label='Go to dashboard'
+              >
                 <i className='bi bi-speedometer2 me-1' aria-hidden='true'></i>
                 Dashboard
+              </Nav.Link>
+              <Nav.Link
+                as={Link}
+                href='/glossary'
+                className='fw-medium'
+                role='menuitem'
+                aria-label='View glossary of security terms'
+              >
+                <i className='bi bi-book me-1' aria-hidden='true'></i>
+                Glossary
               </Nav.Link>
             </Nav>
           </Navbar.Collapse>

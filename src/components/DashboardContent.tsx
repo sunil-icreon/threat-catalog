@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import EcosystemMultiSelect from "@/components/EcosystemMultiSelect";
 import { GetEcosystemOptions } from "@/components/shared/UtilityComponents";
 import { useAppStore } from "@/lib/store";
 import { STORAGE_KEYS } from "@/utilities/constants";
@@ -29,17 +28,31 @@ import {
   actionFetchLatest,
   actionPurgeCache
 } from "@/app/actions/vulnerabilities.action";
-import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { PageSkeleton } from "../components/LoadingSkeleton";
 import StatsCards from "../components/StatsCards";
 import VulnerabilityDisplay from "../components/VulnerabilityDisplay";
-import { PageSkeleton } from "../components/LoadingSkeleton";
+import {
+  IEcoSystemType,
+  IRecord,
+  ISecerityType,
+  IStatType,
+  IVulnerabilityType,
+  SeverityStats,
+  VulnerabilityFilters,
+  VulnerabilityResponse
+} from "../types/vulnerability";
 
 // Lazy load heavy components
 const VulnerabilityDetailModal = dynamic(
   () => import("../components/VulnerabilityDetailModal"),
   {
-    loading: () => <div aria-live='polite' aria-busy='true'>Loading modal...</div>,
+    loading: () => (
+      <div aria-live='polite' aria-busy='true'>
+        Loading modal...
+      </div>
+    ),
     ssr: false
   }
 );
@@ -47,7 +60,11 @@ const VulnerabilityDetailModal = dynamic(
 const VulnerabilityDetailSidebar = dynamic(
   () => import("../components/VulnerabilityDetailSidebar"),
   {
-    loading: () => <div aria-live='polite' aria-busy='true'>Loading sidebar...</div>,
+    loading: () => (
+      <div aria-live='polite' aria-busy='true'>
+        Loading sidebar...
+      </div>
+    ),
     ssr: false
   }
 );
@@ -59,16 +76,6 @@ const VulnerabilityFiltersComponent = dynamic(
     ssr: false
   }
 );
-import {
-  IEcoSystemType,
-  IRecord,
-  ISecerityType,
-  IStatType,
-  IVulnerabilityType,
-  SeverityStats,
-  VulnerabilityFilters,
-  VulnerabilityResponse
-} from "../types/vulnerability";
 
 export interface ILatestQueryFilterType {
   ecosystem: IEcoSystemType;
@@ -353,143 +360,167 @@ export const DashboardContent = (props: any) => {
                 {refreshing && "Refreshing data"}
                 {error && `Error: ${error}`}
               </div>
-            <div className='mb-1'>
-              <div className='d-flex flex-wrap justify-content-between gap-1'>
-                <div>
-                  <h3 className='fw-bold text-dark mb-0'>
-                    Vulnerability Dashboard
-                  </h3>
-                  <p className='text-muted d-flex align-items-center'>
-                    Monitor security vulnerabilities across NPM, Maven, and
-                    NuGet ecosystems
-                    <Button
-                      variant='outline'
-                      onClick={() => setShowModal(true)}
-                      aria-label='Show information about the dashboard'
+              <div className='mb-1'>
+                <div className='d-flex flex-wrap justify-content-between gap-1'>
+                  <div>
+                    <h3 className='fw-bold text-dark mb-0'>
+                      Vulnerability Dashboard
+                    </h3>
+                    <p
+                      className='d-flex align-items-center'
+                      style={{ color: "#495057" }}
                     >
-                      <i className='bi bi-info-circle' aria-hidden='true'></i>
+                      Monitor security vulnerabilities across NPM, Maven, and
+                      NuGet ecosystems
+                      <Button
+                        variant='outline'
+                        onClick={() => setShowModal(true)}
+                        aria-label='Show information about the dashboard'
+                      >
+                        <i className='bi bi-info-circle' aria-hidden='true'></i>
+                      </Button>
+                    </p>
+                  </div>
+                  <div className='mb-3 d-flex align-items-center gap-2'>
+                    <Button
+                      variant='dark'
+                      className='d-flex align-items-center ms-2'
+                      size='sm'
+                      disabled={refreshing}
+                      onClick={refreshPage}
+                      aria-label='Refresh vulnerability data'
+                      aria-busy={refreshing}
+                      style={{ minHeight: "31px" }}
+                    >
+                      <span className='d-flex align-items-center'>
+                        {refreshing ? (
+                          <Spinner
+                            animation='border'
+                            size='sm'
+                            className='me-2'
+                            role='status'
+                            aria-hidden='true'
+                            style={{ width: "14px", height: "14px" }}
+                          />
+                        ) : (
+                          <i
+                            className='bi bi-arrow-clockwise me-2'
+                            aria-hidden='true'
+                            style={{ fontSize: "14px" }}
+                          ></i>
+                        )}
+                        <span>Refresh</span>
+                      </span>
                     </Button>
-                  </p>
-                </div>
-                <div className='mb-3 d-flex align-items-center gap-2'>
-                  <Button
-                    variant='dark'
-                    className='d-flex align-items-center  ms-2'
-                    size='sm'
-                    disabled={refreshing}
-                    onClick={refreshPage}
-                    aria-label='Refresh vulnerability data'
-                    aria-busy={refreshing}
-                  >
-                    <i className='bi bi-arrow-clockwise' aria-hidden='true'></i>
-                  </Button>
 
-                  <Button
-                    variant='primary'
-                    className='d-flex align-items-center  ms-2'
-                    size='sm'
-                    onClick={handleShowFetchModal}
-                    aria-label='Fetch latest vulnerabilities'
-                  >
-                    <i className={`bi bi-gear me-2`} aria-hidden='true'></i>
-                    Fetch Latest
-                  </Button>
-
-                  <EcosystemMultiSelect
-                    onEcosystemsChange={handleEcosystemsChange}
-                  />
+                    <Button
+                      variant='primary'
+                      className='d-flex align-items-center ms-2'
+                      size='sm'
+                      onClick={handleShowFetchModal}
+                      aria-label='Fetch latest vulnerabilities'
+                    >
+                      <i className='bi bi-gear me-2' aria-hidden='true'></i>
+                      Fetch Latest
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Stats Cards */}
-            <div className='stats-section' style={{ minHeight: '120px' }}>
-              {stats.ecosystemStats && (
-                <StatsCards
-                  resultKey={resultKey}
-                  ecosystemStats={stats.ecosystemStats}
-                  severityStats={stats.severityStats}
-                  totalVulnerabilities={stats.totalVulnerabilities}
-                  lastUpdate={stats.lastRefresh}
-                  durationStats={stats.durationStats}
-                  vulnerabilities={vulnerabilities}
-                  onVulnerabilityClick={handleVulnerabilityClick}
-                />
-              )}
-            </div>
-            {/* Filters */}
-            <div className='filters-section' style={{ minHeight: '100px' }}>
-              <VulnerabilityFiltersComponent
-                onFiltersChange={handleFiltersChange}
-              />
-            </div>
-            {/* Error State */}
-            <ToastContainer
-              position='top-end'
-              className='p-3'
-              style={{ zIndex: 1 }}
-            >
-              <Toast
-                onClose={() => setError("")}
-                show={!!error}
-                delay={3000}
-                autohide
-              >
-                <Toast.Header className='error-bg'>
-                  <strong className='me-auto'>Error</strong>
-                </Toast.Header>
-                <Toast.Body className='error-bg-alt text-danger'>
-                  {error}
-                </Toast.Body>
-              </Toast>
-            </ToastContainer>
-            {/* Loading State */}
-            {loading && filteredVuls?.length === 0 && (
-              <div className='d-flex justify-content-center align-items-center text-center py-5'>
-                <Spinner
-                  animation='border'
-                  variant='primary'
-                  className='me-2'
-                />
-                <span className='text-muted'>Loading vulnerabilities...</span>
-              </div>
-            )}
-            {/* Vulnerabilities Display */}
-            {!loading && filteredVuls?.length > 0 && (
-              <div>
-                <div className='d-flex justify-content-between align-items-center mb-4'>
-                  <h2 className='h4 fw-semibold text-dark mb-0'>
-                    Vulnerabilities ({filteredVuls.length})
-                  </h2>
-                </div>
-
-                <div style={{ minHeight: filteredVuls.length > 0 ? '400px' : '200px' }}>
-                  <VulnerabilityDisplay
-                    vulnerabilities={filteredVuls}
+              {/* Stats Cards */}
+              <div className='stats-section' style={{ minHeight: "120px" }}>
+                {stats.ecosystemStats && (
+                  <StatsCards
+                    resultKey={resultKey}
+                    ecosystemStats={stats.ecosystemStats}
+                    severityStats={stats.severityStats}
+                    totalVulnerabilities={stats.totalVulnerabilities}
+                    lastUpdate={stats.lastRefresh}
+                    durationStats={stats.durationStats}
+                    vulnerabilities={vulnerabilities}
                     onVulnerabilityClick={handleVulnerabilityClick}
                   />
+                )}
+              </div>
+              {/* Filters */}
+              <div className='filters-section' style={{ minHeight: "100px" }}>
+                <VulnerabilityFiltersComponent
+                  onFiltersChange={handleFiltersChange}
+                />
+              </div>
+              {/* Error State */}
+              <ToastContainer
+                position='top-end'
+                className='p-3'
+                style={{ zIndex: 1 }}
+              >
+                <Toast
+                  onClose={() => setError("")}
+                  show={!!error}
+                  delay={3000}
+                  autohide
+                >
+                  <Toast.Header className='error-bg'>
+                    <strong className='me-auto'>Error</strong>
+                  </Toast.Header>
+                  <Toast.Body className='error-bg-alt text-danger'>
+                    {error}
+                  </Toast.Body>
+                </Toast>
+              </ToastContainer>
+              {/* Loading State */}
+              {loading && filteredVuls?.length === 0 && (
+                <div className='d-flex justify-content-center align-items-center text-center py-5'>
+                  <Spinner
+                    animation='border'
+                    variant='primary'
+                    className='me-2'
+                  />
+                  <span style={{ color: "#495057" }}>
+                    Loading vulnerabilities...
+                  </span>
                 </div>
-              </div>
-            )}
-            {/* Empty State */}
-            {!loading && filteredVuls?.length === 0 && !error && (
-              <div className='text-center py-5'>
-                <i
-                  className='bi bi-shield-check text-muted'
-                  style={{ fontSize: "3rem" }}
-                ></i>
-                <h3 className='h5 fw-medium text-dark mt-3 mb-2'>
-                  No vulnerabilities found
-                </h3>
-                <p className='text-muted'>
-                  Try adjusting your filters or refresh the data to see the
-                  latest vulnerabilities.
-                </p>
-              </div>
-            )}
+              )}
+              {/* Vulnerabilities Display */}
+              {!loading && filteredVuls?.length > 0 && (
+                <div>
+                  <div className='d-flex justify-content-between align-items-center mb-4'>
+                    <h2 className='h4 fw-semibold text-dark mb-0'>
+                      Vulnerabilities ({filteredVuls.length})
+                    </h2>
+                  </div>
+
+                  <div
+                    style={{
+                      minHeight: filteredVuls.length > 0 ? "400px" : "200px"
+                    }}
+                  >
+                    <VulnerabilityDisplay
+                      vulnerabilities={filteredVuls}
+                      onVulnerabilityClick={handleVulnerabilityClick}
+                    />
+                  </div>
+                </div>
+              )}
+              {/* Empty State */}
+              {!loading && filteredVuls?.length === 0 && !error && (
+                <div className='text-center py-5'>
+                  <i
+                    className='bi bi-shield-check'
+                    style={{ fontSize: "3rem", color: "#495057" }}
+                  ></i>
+                  <h3 className='h5 fw-medium text-dark mt-3 mb-2'>
+                    No vulnerabilities found
+                  </h3>
+                  <p style={{ color: "#495057" }}>
+                    Try adjusting your filters or refresh the data to see the
+                    latest vulnerabilities.
+                  </p>
+                </div>
+              )}
             </Container>
           </main>
-          </div>
+        </div>
 
         {showModal && (
           <Modal
@@ -509,7 +540,7 @@ export const DashboardContent = (props: any) => {
             <Modal.Body>
               <div className='mb-3'>
                 <h5 className='mb-3 d-flex align-items-center'></h5>
-                <p className='mb-4 text-muted'>
+                <p className='mb-4' style={{ color: "#495057" }}>
                   This vulnerability dashboard provides monitoring of security
                   vulnerabilities identified recently across multiple package
                   ecosystems including NPM, Maven, and NuGet.
@@ -668,7 +699,7 @@ export const DashboardContent = (props: any) => {
                       variant='primary'
                       className='me-2'
                     />
-                    <span className='text-muted'>
+                    <span style={{ color: "#495057" }}>
                       Fetching live vulnerabilities, this may take few
                       minutes...
                     </span>
