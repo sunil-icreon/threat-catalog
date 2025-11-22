@@ -86,7 +86,9 @@ const RenderEcoSystemCards = memo(
                   <div className='d-flex flex-column gap-1'>
                     <div className='d-flex justify-content-between align-items-center mb-2'>
                       <div>
-                        <p className='text-muted  mb-1 small'>Ecosystem</p>
+                        <p className='mb-1 small' style={{ color: "#495057" }}>
+                          Ecosystem
+                        </p>
                         <h3 className='mb-0'>
                           <span>{ECOSYSTEM_NAME[ecosystem] ?? ecosystem}</span>
                         </h3>
@@ -96,6 +98,7 @@ const RenderEcoSystemCards = memo(
                         data-role='button'
                         title={`View ${ecosystem?.toUpperCase()} vulnerabilities`}
                         onClick={handleClick.bind(this, ecosystem)}
+                        style={{ color: "#198754", fontWeight: "bold" }}
                       >
                         {count}
                       </div>
@@ -107,7 +110,10 @@ const RenderEcoSystemCards = memo(
                     key={ecosystem}
                     className='justify-content-between small flex-grow-1'
                   >
-                    <span className='text-muted text-capitalize'>
+                    <span
+                      className='text-capitalize'
+                      style={{ color: "#495057" }}
+                    >
                       {severityStats.CRITICAL?.[ecosystem] > 0 && (
                         <SeverityCount
                           count={severityStats.CRITICAL[ecosystem]}
@@ -149,7 +155,10 @@ const RenderEcoSystemCards = memo(
                   </div>
 
                   {/* Bottom section with scan info - always at bottom */}
-                  <div className='text-muted small mt-auto border-top'>
+                  <div
+                    className='small mt-auto border-top'
+                    style={{ color: "#495057" }}
+                  >
                     <span className='small'>
                       Scanned <strong>{formatRelativeTime(fetchedAt)}</strong>{" "}
                       for last <strong>{duration}</strong> day
@@ -250,7 +259,9 @@ export default function StatsCards({
             <Card.Body>
               <div className='d-flex justify-content-between align-items-center mb-3'>
                 <div>
-                  <p className='text-muted mb-1 small'>Total Vulnerabilities</p>
+                  <p className='mb-1 small' style={{ color: "#495057" }}>
+                    Total Vulnerabilities
+                  </p>
                   <h3 className='mb-0'>{total}</h3>
                 </div>
                 <div
@@ -259,7 +270,10 @@ export default function StatsCards({
                   data-role='button'
                   onClick={handleClick}
                 >
-                  <i className='bi bi-shield-check text-primary fs-4'></i>
+                  <i
+                    className='bi bi-shield-check fs-4'
+                    style={{ color: "#0d6efd" }}
+                  ></i>
                 </div>
               </div>
 

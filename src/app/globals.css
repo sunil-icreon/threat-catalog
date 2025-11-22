@@ -27,7 +27,8 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Arial, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -45,12 +46,7 @@ body {
 }
 
 .skeleton-line {
-  background: linear-gradient(
-    90deg,
-    #f0f0f0 0px,
-    #e0e0e0 40px,
-    #f0f0f0 80px
-  );
+  background: linear-gradient(90deg, #f0f0f0 0px, #e0e0e0 40px, #f0f0f0 80px);
   background-size: 1000px 100%;
   animation: shimmer 1.5s infinite linear;
   border-radius: 4px;
@@ -59,12 +55,7 @@ body {
 
 @media (prefers-color-scheme: dark) {
   .skeleton-line {
-    background: linear-gradient(
-      90deg,
-      #2a2a2a 0px,
-      #3a3a3a 40px,
-      #2a2a2a 80px
-    );
+    background: linear-gradient(90deg, #2a2a2a 0px, #3a3a3a 40px, #2a2a2a 80px);
     background-size: 1000px 100%;
   }
 }
@@ -627,9 +618,7 @@ main {
   z-index: 1049;
   opacity: 0;
   visibility: hidden;
-  transition:
-    opacity 0.3s ease-in-out,
-    visibility 0.3s ease-in-out;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
 .vulnerability-sidebar.open + .sidebar-overlay {
@@ -806,9 +795,7 @@ body.sidebar-open {
 /* Card hover effect for mobile */
 .cursor-pointer {
   cursor: pointer;
-  transition:
-    transform 0.2s ease-in-out,
-    box-shadow 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .cursor-pointer:hover {
@@ -1147,8 +1134,12 @@ code.vulnerable {
 /* min-width will be set via JavaScript to match width */
 
 /* Allow Title column to wrap, but keep other columns at their specified widths */
-.vulnerability-table-container .table th:not(.fixed-first-column):not(.fixed-second-column),
-.vulnerability-table-container .table td:not(.fixed-first-column):not(.fixed-second-column) {
+.vulnerability-table-container
+  .table
+  th:not(.fixed-first-column):not(.fixed-second-column),
+.vulnerability-table-container
+  .table
+  td:not(.fixed-first-column):not(.fixed-second-column) {
   white-space: nowrap;
 }
 
@@ -1156,6 +1147,12 @@ code.vulnerable {
 .vulnerability-table-container .table th,
 .vulnerability-table-container .table td {
   box-sizing: border-box;
+}
+
+/* Grey background for all table headers */
+.vulnerability-table-container thead th {
+  background-color: #6c757d !important;
+  color: #ffffff !important;
 }
 
 /* Ensure fixed columns maintain width */
@@ -1185,7 +1182,8 @@ code.vulnerable {
 }
 
 .vulnerability-table-container thead .fixed-first-column {
-  background-color: #212529 !important;
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
   z-index: 101;
 }
 
@@ -1215,7 +1213,14 @@ code.vulnerable {
 }
 
 .vulnerability-table-container thead .fixed-second-column {
-  background-color: #212529 !important;
+  background-color: #6c757d !important;
+  color: #ffffff !important;
+  z-index: 101;
+}
+
+.vulnerability-table-container thead .fixed-first-column {
+  background-color: #6c757d !important;
+  color: #ffffff !important;
   z-index: 101;
 }
 
@@ -1261,7 +1266,9 @@ code.vulnerable {
   border-radius: 0 0 0.375rem 0.375rem;
 }
 
-.vulnerability-table-wrapper .vulnerability-table-top-scrollbar:not([style*="display: none"]) + .vulnerability-table-container {
+.vulnerability-table-wrapper
+  .vulnerability-table-top-scrollbar:not([style*="display: none"])
+  + .vulnerability-table-container {
   border-top: 1px solid #dee2e6;
   border-radius: 0;
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Badge, Card, Table } from "react-bootstrap";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { Card, Table } from "react-bootstrap";
 
 interface GlossaryTerm {
   term: string;
@@ -54,11 +54,145 @@ const categoryLightColors: Record<
   }
 };
 
-export default function GlossaryIndex({
-  categories,
-  terms,
-  onTermClick
-}: GlossaryIndexProps) {
+// Memoized term item component for mobile
+const MobileTermItem = memo(
+  ({
+    term,
+    lightColor,
+    onTermClick
+  }: {
+    term: { term: string; category: string };
+    lightColor: { bg: string; border: string; text: string };
+    onTermClick: (term: string, category: string) => void;
+  }) => {
+    const handleClick = useCallback(() => {
+      onTermClick(term.term, term.category);
+    }, [term.term, term.category, onTermClick]);
+
+    const handleMouseEnter = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        e.currentTarget.style.backgroundColor = lightColor.bg;
+        e.currentTarget.style.borderLeftColor = lightColor.text;
+        e.currentTarget.style.transform = "translateX(4px)";
+      },
+      [lightColor]
+    );
+
+    const handleMouseLeave = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        e.currentTarget.style.backgroundColor = "#f8f9fa";
+        e.currentTarget.style.borderLeftColor = lightColor.border;
+        e.currentTarget.style.transform = "";
+      },
+      [lightColor]
+    );
+
+    return (
+      <div
+        className='p-3 mb-2 rounded'
+        style={{
+          cursor: "pointer",
+          transition: "all 0.2s",
+          backgroundColor: "#f8f9fa",
+          border: `1px solid ${lightColor.border}`,
+          borderLeft: `3px solid ${lightColor.border}`
+        }}
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div className='d-flex align-items-center'>
+          <span
+            className='fw-medium'
+            style={{
+              color: lightColor.text,
+              fontSize: "0.875rem"
+            }}
+          >
+            {term.term}
+          </span>
+          <i
+            className='bi bi-chevron-right ms-auto'
+            style={{
+              color: lightColor.text,
+              fontSize: "0.75rem",
+              opacity: 0.6
+            }}
+          ></i>
+        </div>
+      </div>
+    );
+  }
+);
+
+MobileTermItem.displayName = "MobileTermItem";
+
+// Bootstrap color values
+const bootstrapColorValues: Record<string, string> = {
+  primary: "#0d6efd",
+  danger: "#dc3545",
+  warning: "#ffc107",
+  success: "#198754",
+  info: "#0dcaf0"
+};
+
+// Memoized desktop term badge
+const DesktopTermBadge = memo(
+  ({
+    term,
+    category,
+    categoryColor,
+    onTermClick
+  }: {
+    term: { term: string; category: string };
+    category: string;
+    categoryColor: string;
+    onTermClick: (term: string, category: string) => void;
+  }) => {
+    const handleClick = useCallback(() => {
+      onTermClick(term.term, term.category);
+    }, [term.term, term.category, onTermClick]);
+
+    const handleMouseEnter = useCallback(
+      (e: React.MouseEvent<HTMLSpanElement>) => {
+        const color = bootstrapColorValues[categoryColor] || categoryColor;
+        e.currentTarget.style.backgroundColor = color;
+        e.currentTarget.style.color = "white";
+        e.currentTarget.style.transform = "scale(1.05)";
+      },
+      [categoryColor]
+    );
+
+    const handleMouseLeave = useCallback(
+      (e: React.MouseEvent<HTMLSpanElement>) => {
+        e.currentTarget.style.backgroundColor = "";
+        e.currentTarget.style.color = "";
+        e.currentTarget.style.transform = "";
+      },
+      []
+    );
+
+    return (
+      <span
+        className='badge bg-light text-dark border'
+        style={{
+          cursor: "pointer",
+          transition: "all 0.2s",
+          fontSize: "0.875rem"
+        }}
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {term.term}
+      </span>
+    );
+  }
+);
+
+DesktopTermBadge.displayName = "DesktopTermBadge";
+
+function GlossaryIndex({ categories, terms, onTermClick }: GlossaryIndexProps) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -71,10 +205,15 @@ export default function GlossaryIndex({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const groupedTerms = categories.map((category) => ({
-    category,
-    terms: terms.filter((t) => t.category === category)
-  }));
+  // Memoize grouped terms calculation
+  const groupedTerms = useMemo(
+    () =>
+      categories.map((category) => ({
+        category,
+        terms: terms.filter((t) => t.category === category)
+      })),
+    [categories, terms]
+  );
 
   if (isMobile) {
     // Mobile: Card layout with light, professional colors
@@ -109,48 +248,12 @@ export default function GlossaryIndex({
               </Card.Header>
               <Card.Body className='p-3' style={{ backgroundColor: "#ffffff" }}>
                 {terms.map((term) => (
-                  <div
+                  <MobileTermItem
                     key={term.term}
-                    className='p-3 mb-2 rounded'
-                    style={{
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      backgroundColor: "#f8f9fa",
-                      border: `1px solid ${lightColor.border}`,
-                      borderLeft: `3px solid ${lightColor.border}`
-                    }}
-                    onClick={() => onTermClick(term.term, term.category)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = lightColor.bg;
-                      e.currentTarget.style.borderLeftColor = lightColor.text;
-                      e.currentTarget.style.transform = "translateX(4px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f8f9fa";
-                      e.currentTarget.style.borderLeftColor = lightColor.border;
-                      e.currentTarget.style.transform = "";
-                    }}
-                  >
-                    <div className='d-flex align-items-center'>
-                      <span
-                        className='fw-medium'
-                        style={{
-                          color: lightColor.text,
-                          fontSize: "0.875rem"
-                        }}
-                      >
-                        {term.term}
-                      </span>
-                      <i
-                        className='bi bi-chevron-right ms-auto'
-                        style={{
-                          color: lightColor.text,
-                          fontSize: "0.75rem",
-                          opacity: 0.6
-                        }}
-                      ></i>
-                    </div>
-                  </div>
+                    term={term}
+                    lightColor={lightColor}
+                    onTermClick={onTermClick}
+                  />
                 ))}
               </Card.Body>
             </Card>
@@ -182,39 +285,18 @@ export default function GlossaryIndex({
               {groupedTerms.map(({ category, terms }) => (
                 <tr key={category}>
                   <td className='align-middle'>
-                    <Badge
-                      bg={categoryColors[category]}
-                      className='fw-semibold'
-                    >
-                      {category}
-                    </Badge>
+                    <span className='text-muted fw-bold'>{category}</span>
                   </td>
                   <td>
                     <div className='d-flex flex-wrap gap-2'>
                       {terms.map((term) => (
-                        <span
+                        <DesktopTermBadge
                           key={term.term}
-                          className='badge bg-light text-dark border'
-                          style={{
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                            fontSize: "0.875rem"
-                          }}
-                          onClick={() => onTermClick(term.term, term.category)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              categoryColors[category];
-                            e.currentTarget.style.color = "white";
-                            e.currentTarget.style.transform = "scale(1.05)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "";
-                            e.currentTarget.style.color = "";
-                            e.currentTarget.style.transform = "";
-                          }}
-                        >
-                          {term.term}
-                        </span>
+                          term={term}
+                          category={category}
+                          categoryColor={categoryColors[category]}
+                          onTermClick={onTermClick}
+                        />
                       ))}
                     </div>
                   </td>
@@ -227,3 +309,5 @@ export default function GlossaryIndex({
     </Card>
   );
 }
+
+export default memo(GlossaryIndex);

@@ -363,9 +363,9 @@ export const DashboardContent = (props: any) => {
               <div className='mb-1'>
                 <div className='d-flex flex-wrap justify-content-between gap-1'>
                   <div>
-                    <h3 className='fw-bold text-dark mb-0'>
+                    <h1 className='h3 fw-bold text-dark mb-0'>
                       Vulnerability Dashboard
-                    </h3>
+                    </h1>
                     <p
                       className='d-flex align-items-center'
                       style={{ color: "#495057" }}
@@ -539,7 +539,6 @@ export const DashboardContent = (props: any) => {
 
             <Modal.Body>
               <div className='mb-3'>
-                <h5 className='mb-3 d-flex align-items-center'></h5>
                 <p className='mb-4' style={{ color: "#495057" }}>
                   This vulnerability dashboard provides monitoring of security
                   vulnerabilities identified recently across multiple package
@@ -622,8 +621,11 @@ export const DashboardContent = (props: any) => {
                   <Form.Group controlId='exampleInput'>
                     <Row className='g-3'>
                       <Col sm={12} lg={6}>
-                        <Form.Label>Ecosystem</Form.Label>
+                        <Form.Label htmlFor='fetch-ecosystem'>
+                          Ecosystem
+                        </Form.Label>
                         <Form.Select
+                          id='fetch-ecosystem'
                           defaultValue='npm'
                           onChange={(e) =>
                             handleLatestQueryFilterChange(
@@ -637,8 +639,11 @@ export const DashboardContent = (props: any) => {
                       </Col>
 
                       <Col sm={12} lg={6}>
-                        <Form.Label>Duration</Form.Label>
+                        <Form.Label htmlFor='fetch-duration'>
+                          Duration
+                        </Form.Label>
                         <Form.Select
+                          id='fetch-duration'
                           defaultValue='week'
                           onChange={(e) =>
                             handleLatestQueryFilterChange(
@@ -655,8 +660,9 @@ export const DashboardContent = (props: any) => {
                     </Row>
                     <Row className='mt-3 mb-3'>
                       <Col sm={12} lg={6}>
-                        <Form.Label>API Key</Form.Label>
+                        <Form.Label htmlFor='fetch-api-key'>API Key</Form.Label>
                         <Form.Control
+                          id='fetch-api-key'
                           type='password'
                           placeholder='API Key...'
                           value={latestQueryFilter.apiKey}
@@ -693,7 +699,7 @@ export const DashboardContent = (props: any) => {
 
               {fetchingLatest && (
                 <>
-                  <div className='d-flex align-items-center justify-content-center text-center gap-2 py-5'>
+                  <div className='d-flex flex-column md:flex-row align-items-center justify-content-center text-center gap-2 py-5'>
                     <Spinner
                       animation='border'
                       variant='primary'
