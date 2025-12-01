@@ -782,6 +782,41 @@ body.vulnerability-modal-open.modal-open {
   }
 }
 
+/* Package Vulnerability Matcher - Highlighted styling */
+.package-vulnerability-matcher {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.package-vulnerability-matcher .alert {
+  border-left: 5px solid #dc3545 !important;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+}
+
+.package-vulnerability-matcher .card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.package-vulnerability-matcher .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(220, 53, 69, 0.3);
+}
+
+.package-vulnerability-matcher .badge {
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+}
+
 /* Table row hover effect for clickable rows */
 .table-hover tbody tr {
   transition: background-color 0.15s ease-in-out;
