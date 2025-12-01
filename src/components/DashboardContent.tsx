@@ -32,6 +32,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageSkeleton } from "../components/LoadingSkeleton";
+import ScrollToTopButton from "../components/ScrollToTopButton";
 import StatsCards from "../components/StatsCards";
 import VulnerabilityDisplay from "../components/VulnerabilityDisplay";
 import {
@@ -756,6 +757,8 @@ export const DashboardContent = (props: any) => {
             onClose={handleCloseMobileModal}
           />
         )}
+
+        <ScrollToTopButton />
       </>
     </Suspense>
   );
