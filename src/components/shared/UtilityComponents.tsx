@@ -39,9 +39,18 @@ interface ISeverityCountProps {
   variant: IVariantType;
   ecosystem?: IEcoSystemType;
   showPercentage?: boolean;
+  threatFilter?: VulnerabilityFilters;
 }
 export const SeverityCount = (props: ISeverityCountProps) => {
-  const { label, count, total, variant, showPercentage, ecosystem } = props;
+  const {
+    label,
+    count,
+    total,
+    variant,
+    showPercentage,
+    ecosystem,
+    threatFilter
+  } = props;
   const { setThreatFilter } = useAppStore();
 
   const displayLabel = useMemo(() => {
@@ -68,11 +77,28 @@ export const SeverityCount = (props: ISeverityCountProps) => {
     setThreatFilter(newFilter);
   };
 
+  // Check if this severity is selected
+  const isSelected =
+    threatFilter?.severity === variant.toUpperCase() &&
+    (!ecosystem ||
+      threatFilter?.ecosystem === ecosystem ||
+      !threatFilter?.ecosystem);
+
   return (
     <div
-      className='d-flex justify-content-between cursor-pointer severity-item'
+      className={`d-flex justify-content-between cursor-pointer severity-item ${
+        isSelected ? "border-start border-primary border-3 ps-2 rounded" : ""
+      }`}
       data-role='button'
       onClick={handleClick}
+      style={
+        isSelected
+          ? {
+              backgroundColor: "rgba(13, 110, 253, 0.08)",
+              fontWeight: "600"
+            }
+          : {}
+      }
     >
       <span className={`text-${variant} text-capitalize`}>
         <strong
@@ -94,7 +120,7 @@ export const SeverityCount = (props: ISeverityCountProps) => {
     </div>
   );
 };
-
+SeverityCount.displayName = "SeverityCount";
 interface IEPSSProps {
   epss: EPSSData;
   displayType: "table" | "card";
