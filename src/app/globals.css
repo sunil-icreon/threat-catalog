@@ -688,6 +688,135 @@ body.sidebar-open {
   overflow: hidden;
 }
 
+/* Prevent page scroll when vulnerability detail modal is open - override the position: fixed rule */
+/* This must come AFTER the body.modal-open rule to override it */
+@media (max-width: 991.98px) {
+  body.modal-open:has(.vulnerability-detail-modal) {
+    /* Don't use position: fixed as it can cause scroll jump */
+    overflow: hidden !important;
+    position: static !important; /* Override position: fixed to prevent scroll jump */
+    width: auto !important;
+    height: auto !important;
+    /* Preserve scroll position by not using position: fixed */
+  }
+}
+
+/* Also override for all screen sizes using :has() selector */
+body.modal-open:has(.vulnerability-detail-modal) {
+  /* Don't use position: fixed as it can cause scroll jump */
+  overflow: hidden !important;
+  position: static !important; /* Override position: fixed to prevent scroll jump */
+  width: auto !important;
+  height: auto !important;
+  /* Preserve scroll position by not using position: fixed */
+}
+
+/* Fallback for browsers that don't support :has() - use class-based approach */
+body.vulnerability-modal-open.modal-open {
+  /* Don't use position: fixed as it can cause scroll jump */
+  overflow: hidden !important;
+  position: static !important; /* Override position: fixed to prevent scroll jump */
+  width: auto !important;
+  height: auto !important;
+  /* Preserve scroll position by not using position: fixed */
+}
+
+/* Scroll to Top Button - Mobile Only */
+.scroll-to-top-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 1.5rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease-in-out, opacity 0.3s ease-in-out,
+    transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  opacity: 1;
+  transform: scale(1);
+  border: none;
+  padding: 0;
+  background-color: #e9ecef !important; /* Light gray background */
+}
+
+.scroll-to-top-button:hover,
+.scroll-to-top-button:focus {
+  background-color: #0d6efd !important; /* Blue on hover/focus */
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  opacity: 1;
+}
+
+.scroll-to-top-button:active {
+  transform: scale(0.95);
+  background-color: #0a58ca !important; /* Darker blue on active */
+}
+
+.scroll-to-top-button i {
+  font-size: 1.5rem;
+  color: #495057; /* Dark gray icon color */
+  transition: color 0.3s ease-in-out;
+}
+
+.scroll-to-top-button:hover i,
+.scroll-to-top-button:focus i {
+  color: white; /* White icon on hover/focus */
+}
+
+/* Hide on desktop */
+@media (min-width: 992px) {
+  .scroll-to-top-button {
+    display: none !important;
+  }
+}
+
+/* Adjust position for safe area on iOS devices */
+@supports (padding: max(0px)) {
+  .scroll-to-top-button {
+    bottom: max(2rem, env(safe-area-inset-bottom, 0px) + 1rem);
+    right: max(1.5rem, env(safe-area-inset-right, 0px) + 0.5rem);
+  }
+}
+
+/* Package Vulnerability Matcher - Highlighted styling */
+.package-vulnerability-matcher {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.package-vulnerability-matcher .alert {
+  border-left: 5px solid #dc3545 !important;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+}
+
+.package-vulnerability-matcher .card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.package-vulnerability-matcher .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(220, 53, 69, 0.3);
+}
+
+.package-vulnerability-matcher .badge {
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+}
+
 /* Table row hover effect for clickable rows */
 .table-hover tbody tr {
   transition: background-color 0.15s ease-in-out;
@@ -758,7 +887,8 @@ body.sidebar-open {
 
 /* Mobile Modal Styling */
 .vulnerability-detail-modal .modal-content {
-  height: 100vh;
+  height: 100vh; /* Fallback for browsers that don't support dvh */
+  height: 100dvh; /* Use dynamic viewport height for better mobile support */
   border-radius: 0;
   border: none;
 }
@@ -769,8 +899,10 @@ body.sidebar-open {
     margin: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
+    height: 100vh !important; /* Fallback for browsers that don't support dvh */
+    height: 100dvh !important; /* Use dynamic viewport height */
+    max-height: 100vh !important; /* Fallback */
+    max-height: 100dvh !important; /* Use dynamic viewport height */
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -780,8 +912,10 @@ body.sidebar-open {
   }
 
   .vulnerability-detail-modal .modal-content {
-    height: 100vh !important;
-    max-height: 100vh !important;
+    height: 100vh !important; /* Fallback for browsers that don't support dvh */
+    height: 100dvh !important; /* Use dynamic viewport height */
+    max-height: 100vh !important; /* Fallback */
+    max-height: 100dvh !important; /* Use dynamic viewport height */
     border-radius: 0 !important;
     border: none !important;
     display: flex !important;
@@ -794,6 +928,16 @@ body.sidebar-open {
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: hidden !important; /* Prevent content from overflowing the container */
+  }
+
+  /* Ensure the wrapper div inside modal-content also uses flexbox */
+  .vulnerability-detail-modal .modal-content > div {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
   }
 }
 
@@ -802,13 +946,64 @@ body.sidebar-open {
   color: white !important;
   border-bottom: none;
   padding: 1rem;
+  flex-shrink: 0; /* Prevent header from shrinking in flexbox layout */
 }
 
 .vulnerability-detail-modal .modal-body {
   padding: 1rem;
+  padding-bottom: 6rem; /* Add extra bottom padding for safe scrolling */
   overflow-y: auto;
-  height: calc(100vh - 80px);
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  /* Use flexbox to fill available space instead of fixed calc */
+  flex: 1 1 0%;
+  min-height: 0; /* Allow flex item to shrink below content size */
+  max-height: 100%; /* Constrain height to parent */
   scroll-behavior: smooth;
+  /* Ensure content can scroll fully */
+  box-sizing: border-box;
+  /* Ensure scrolling works */
+  position: relative;
+}
+
+/* Mobile-specific fixes for modal body */
+@media (max-width: 991.98px) {
+  .vulnerability-detail-modal .modal-body {
+    /* Remove any margin that might interfere with scrolling */
+    margin-bottom: 0 !important;
+    /* Ensure full scrolling capability with generous bottom padding */
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    /* Make sure overflow is enabled */
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+    /* Constrain height to enable scrolling */
+    height: 0; /* Force flex item to respect parent constraints */
+    flex: 1 1 0%;
+    max-height: 100%;
+  }
+}
+
+/* iOS-specific fixes for modal body */
+@supports (-webkit-touch-callout: none) {
+  .vulnerability-detail-modal .modal-body {
+    /* Ensure content can scroll fully with safe area padding */
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    /* Force hardware acceleration for smooth scrolling */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    /* Ensure the scroll container can accommodate all content */
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+    /* Constrain height to enable scrolling */
+    height: 0 !important; /* Force flex item to respect parent constraints */
+    flex: 1 1 0% !important;
+    max-height: 100% !important;
+  }
+}
+
+/* Ensure last element in modal body is visible */
+.vulnerability-detail-modal .modal-body > *:last-child {
+  margin-bottom: 0;
+  padding-bottom: 1rem;
 }
 
 .vulnerability-detail-modal .card {
