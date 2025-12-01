@@ -91,9 +91,19 @@ export const formatRelativeTime = (dateInput?: string) => {
   const diffMin = Math.floor(diffSec / 60);
   const diffHours = Math.floor(diffMin / 60);
   const diffDays = Math.floor(diffHours / 24);
+  
+  // Calculate remaining minutes after hours
+  const remainingMinutes = diffMin % 60;
 
   if (diffSec < 60) return `Just now`;
   if (diffMin < 60) return `${diffMin} minutes ago`;
+  if (diffHours < 12) {
+    // Show hours and minutes when less than 12 hours
+    if (remainingMinutes > 0) {
+      return `${diffHours} hr${diffHours !== 1 ? 's' : ''} ${remainingMinutes} min${remainingMinutes !== 1 ? 's' : ''} ago`;
+    }
+    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  }
   if (diffHours < 24) return `${diffHours} hours ago`;
   if (diffDays === 1) return "yesterday";
   if (diffDays < 7) return `${diffDays} days ago`;

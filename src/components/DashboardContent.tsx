@@ -8,7 +8,6 @@ import {
   Suspense,
   useCallback,
   useEffect,
-  useRef,
   useState,
   useTransition
 } from "react";
@@ -128,57 +127,17 @@ export const DashboardContent = (props: any) => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const savedScrollPositionRef = useRef<number>(0);
 
   useEffect(() => {
-    const isMobileDevice = typeof window !== "undefined" && window.innerWidth < 992;
     const hasModalOpen = showModal || showSidebar || showMobileModal;
 
     if (hasModalOpen) {
-      // Save scroll position before modal opens (only on mobile)
-      if (isMobileDevice) {
-        savedScrollPositionRef.current = window.scrollY;
-      }
-
       document.body.classList.add("sidebar-open");
-
-      // Apply negative top to maintain visual position when position:fixed is active
-      // This happens after a small delay to ensure React Bootstrap has added modal-open class
-      if (isMobileDevice && savedScrollPositionRef.current > 0) {
-        // Use setTimeout to ensure modal-open class is applied first
-        const timeoutId = setTimeout(() => {
-          document.body.style.top = `-${savedScrollPositionRef.current}px`;
-        }, 0);
-
-        return () => clearTimeout(timeoutId);
-      }
     } else {
-      // Restore scroll position when modal closes
-      if (isMobileDevice && savedScrollPositionRef.current > 0) {
-        // Remove the negative top style
-        document.body.style.top = "";
-        // Restore the scroll position
-        const scrollPosition = savedScrollPositionRef.current;
-        // Use requestAnimationFrame to ensure DOM is ready
-        requestAnimationFrame(() => {
-          window.scrollTo(0, scrollPosition);
-        });
-        // Reset the saved position after restoring
-        savedScrollPositionRef.current = 0;
-      }
       document.body.classList.remove("sidebar-open");
     }
 
     return () => {
-      // Cleanup: remove styles and classes
-      if (isMobileDevice && savedScrollPositionRef.current > 0) {
-        document.body.style.top = "";
-        const scrollPosition = savedScrollPositionRef.current;
-        requestAnimationFrame(() => {
-          window.scrollTo(0, scrollPosition);
-        });
-        savedScrollPositionRef.current = 0;
-      }
       document.body.classList.remove("sidebar-open");
     };
   }, [showModal, showSidebar, showMobileModal]);
@@ -573,13 +532,13 @@ export const DashboardContent = (props: any) => {
             <Modal.Header closeButton>
               <Modal.Title>
                 <i className='bi bi-shield-check text-primary me-2'></i>
-                About This Dashboard
+                <span className='text-dark fw-bold'>About This Dashboard</span>
               </Modal.Title>
             </Modal.Header>
 
             <Modal.Body>
               <div className='mb-3'>
-                <p className='mb-4' style={{ color: "#495057" }}>
+                <p className='mb-4 text-dark'>
                   This vulnerability dashboard provides monitoring of security
                   vulnerabilities identified recently across multiple package
                   ecosystems including NPM, Maven, and NuGet.
@@ -644,8 +603,9 @@ export const DashboardContent = (props: any) => {
                         Learn More
                       </h6>
                       <p className='mb-2 small' style={{ color: "#495057" }}>
-                        For detailed information about vulnerability terms, severity
-                        levels, and security concepts, visit our glossary page.
+                        For detailed information about vulnerability terms,
+                        severity levels, and security concepts, visit our
+                        glossary page.
                       </p>
                       <Link
                         href='/glossary'
