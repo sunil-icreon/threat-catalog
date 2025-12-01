@@ -264,6 +264,14 @@ main {
   max-width: calc(100% - 1rem);
 }
 
+/* Ensure full width on mobile - override base styles */
+@media (max-width: 991.98px) {
+  .modal-responsive .modal-dialog {
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
 /* Mobile and Tablet fullscreen styles */
 @media (max-width: 991.98px) {
   /* Prevent body scroll when modal is open */
@@ -273,6 +281,17 @@ main {
     width: 100% !important;
     height: 100% !important;
     opacity: 1;
+  }
+
+  /* Ensure all modals are full width on mobile - override Bootstrap defaults */
+  .modal-dialog {
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .modal {
+    padding: 0 !important;
   }
 
   /* Ensure modal backdrop covers everything */
@@ -738,6 +757,40 @@ body.sidebar-open {
   height: 100vh;
   border-radius: 0;
   border: none;
+}
+
+/* Ensure vulnerability-detail-modal is full width on mobile */
+@media (max-width: 991.98px) {
+  .vulnerability-detail-modal .modal-dialog {
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    transform: none !important;
+  }
+
+  .vulnerability-detail-modal .modal-content {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }
 
 .vulnerability-detail-modal .modal-header {

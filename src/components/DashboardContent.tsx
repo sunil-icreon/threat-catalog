@@ -8,6 +8,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useRef,
   useState,
   useTransition
 } from "react";
@@ -29,6 +30,7 @@ import {
   actionPurgeCache
 } from "@/app/actions/vulnerabilities.action";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageSkeleton } from "../components/LoadingSkeleton";
 import StatsCards from "../components/StatsCards";
@@ -126,25 +128,57 @@ export const DashboardContent = (props: any) => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const savedScrollPositionRef = useRef<number>(0);
 
   useEffect(() => {
-    if (showModal || showSidebar || showMobileModal) {
-      // document.body.style.overflow = "hidden";
-      // document.body.style.position = "fixed";
-      // document.body.style.width = "100%";
+    const isMobileDevice = typeof window !== "undefined" && window.innerWidth < 992;
+    const hasModalOpen = showModal || showSidebar || showMobileModal;
+
+    if (hasModalOpen) {
+      // Save scroll position before modal opens (only on mobile)
+      if (isMobileDevice) {
+        savedScrollPositionRef.current = window.scrollY;
+      }
+
       document.body.classList.add("sidebar-open");
+
+      // Apply negative top to maintain visual position when position:fixed is active
+      // This happens after a small delay to ensure React Bootstrap has added modal-open class
+      if (isMobileDevice && savedScrollPositionRef.current > 0) {
+        // Use setTimeout to ensure modal-open class is applied first
+        const timeoutId = setTimeout(() => {
+          document.body.style.top = `-${savedScrollPositionRef.current}px`;
+        }, 0);
+
+        return () => clearTimeout(timeoutId);
+      }
     } else {
-      // document.body.style.overflow = "";
-      // document.body.style.position = "";
-      // document.body.style.width = "";
+      // Restore scroll position when modal closes
+      if (isMobileDevice && savedScrollPositionRef.current > 0) {
+        // Remove the negative top style
+        document.body.style.top = "";
+        // Restore the scroll position
+        const scrollPosition = savedScrollPositionRef.current;
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollPosition);
+        });
+        // Reset the saved position after restoring
+        savedScrollPositionRef.current = 0;
+      }
       document.body.classList.remove("sidebar-open");
     }
 
-    // Cleanup on unmount
     return () => {
-      // document.body.style.overflow = "";
-      // document.body.style.position = "";
-      // document.body.style.width = "";
+      // Cleanup: remove styles and classes
+      if (isMobileDevice && savedScrollPositionRef.current > 0) {
+        document.body.style.top = "";
+        const scrollPosition = savedScrollPositionRef.current;
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollPosition);
+        });
+        savedScrollPositionRef.current = 0;
+      }
       document.body.classList.remove("sidebar-open");
     };
   }, [showModal, showSidebar, showMobileModal]);
@@ -277,6 +311,12 @@ export const DashboardContent = (props: any) => {
   };
 
   const handleShowFetchModal = () => {
+    setlatestQueryFilter({
+      ecosystem: "NPM",
+      duration: "week",
+      apiKey: ""
+    });
+
     setshowFetchLatestModal(() => true);
   };
 
@@ -596,6 +636,28 @@ export const DashboardContent = (props: any) => {
                     </div>
                   </div>
                 </div>
+                <div className='mt-4 p-3 bg-primary bg-opacity-10 rounded border border-primary border-opacity-25'>
+                  <div className='d-flex align-items-start'>
+                    <i className='bi bi-book text-primary me-3 fs-5'></i>
+                    <div className='flex-grow-1'>
+                      <h6 className='text-primary mb-2 fw-semibold'>
+                        Learn More
+                      </h6>
+                      <p className='mb-2 small' style={{ color: "#495057" }}>
+                        For detailed information about vulnerability terms, severity
+                        levels, and security concepts, visit our glossary page.
+                      </p>
+                      <Link
+                        href='/glossary'
+                        className='btn btn-primary btn-sm'
+                        onClick={() => setShowModal(false)}
+                      >
+                        <i className='bi bi-book me-2'></i>
+                        View Glossary
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               </div>
             </Modal.Body>
           </Modal>
@@ -612,13 +674,15 @@ export const DashboardContent = (props: any) => {
             <Modal.Header closeButton>
               <Modal.Title>
                 <i className='bi bi-gear me-2'></i>
-                Fetch Latest Vulnerabilities
+                <span className='text-dark fw-bold'>
+                  Fetch Latest Vulnerabilities
+                </span>
               </Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <div className='border rounded p-3'>
                 <Form noValidate onSubmit={fetchLatestVulnerabilities}>
-                  <Form.Group controlId='exampleInput'>
+                  <Form.Group>
                     <Row className='g-3'>
                       <Col sm={12} lg={6}>
                         <Form.Label htmlFor='fetch-ecosystem'>
@@ -688,6 +752,7 @@ export const DashboardContent = (props: any) => {
                           as='button'
                           type='submit'
                           className='btn btn-primary'
+                          disabled={fetchingLatest}
                         >
                           Fetch Latest
                         </Form.Control>

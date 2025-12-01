@@ -34,8 +34,13 @@ export async function GET(request: NextRequest) {
     // Instead of serializing entire response, use metadata for fast ETag generation
     // Use resultKey from service instance + total + lastRefresh timestamp
     const resultKey = vulnerabilityService.resultKey || 0;
-    const etagContent = `${resultKey}-${result.total || 0}-${result.stats?.lastRefresh || ''}`;
-    const etag = `"${crypto.createHash('md5').update(etagContent).digest('hex')}"`;
+    const etagContent = `${resultKey}-${result.total || 0}-${
+      result.stats?.lastRefresh || ""
+    }`;
+    const etag = `"${crypto
+      .createHash("md5")
+      .update(etagContent)
+      .digest("hex")}"`;
     response.headers.set("ETag", etag);
 
     // Check if client has cached version

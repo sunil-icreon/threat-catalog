@@ -7,11 +7,12 @@ import {
   VulnerabilityFilters
 } from "@/types/vulnerability";
 import { ECOSYSTEM_LIST, ECOSYSTEM_NAME } from "@/utilities/constants";
-import { formatRelativeTime, sortedObjectByKey } from "@/utilities/util";
+import { sortedObjectByKey } from "@/utilities/util";
 import { useRouter } from "next/navigation";
 import { Fragment, memo, useMemo } from "react";
 import { Card, Col, Row } from "react-bootstrap";
 
+import { RelativeTimeDisplay } from "./shared/RelativeTimeDisplay";
 import { SeverityCount } from "./shared/UtilityComponents";
 
 interface StatsCardsProps {
@@ -31,17 +32,19 @@ interface IRenderStatCardProps {
   ecosystemStats: Record<string, number>;
   total: number;
   variant: "critical" | "high" | "medium" | "low";
+  threatFilter?: VulnerabilityFilters;
 }
 
 // eslint-disable-next-line react/display-name
 const RenderStatCard = memo((props: IRenderStatCardProps) => {
-  const { countStat, total, variant } = props;
+  const { countStat, total, variant, threatFilter } = props;
   return (
     <SeverityCount
       count={countStat.total}
       total={total}
       variant={variant}
       showPercentage={true}
+      threatFilter={threatFilter}
     />
   );
 });
@@ -54,11 +57,12 @@ const RenderEcoSystemCards = memo(
     severityStats: SeverityStats;
   }) => {
     const { ecosystemStats, durationStats, severityStats } = props;
-    const { setThreatFilter, selectedEcosystems } = useAppStore();
+    const { setThreatFilter, selectedEcosystems, threatFilter } = useAppStore();
 
     const handleClick = (ecosystem: string) => {
       let newFilter: VulnerabilityFilters = {
-        ecosystem: ecosystem
+        ecosystem: ecosystem,
+        severity: ""
       };
 
       setThreatFilter(newFilter);
@@ -79,9 +83,22 @@ const RenderEcoSystemCards = memo(
 
           const { fetchedAt, duration } = ecoSystemDuration;
 
+          const isSelected = threatFilter?.ecosystem === ecosystem;
+
           return (
             <Col md={6} lg={3} key={ecosystem}>
-              <Card className='custom-card stat-card h-100'>
+              <Card
+                className={`custom-card stat-card h-100 ${
+                  isSelected ? "border-primary border-3 shadow-sm" : ""
+                }`}
+                style={
+                  isSelected
+                    ? {
+                        backgroundColor: "rgba(13, 110, 253, 0.05)"
+                      }
+                    : {}
+                }
+              >
                 <Card.Body className='d-flex flex-column h-100'>
                   <div className='d-flex flex-column gap-1'>
                     <div className='d-flex justify-content-between align-items-center mb-2'>
@@ -121,6 +138,7 @@ const RenderEcoSystemCards = memo(
                           variant='critical'
                           showPercentage={true}
                           ecosystem={ecosystem as IEcoSystemType}
+                          threatFilter={threatFilter}
                         />
                       )}
 
@@ -131,6 +149,7 @@ const RenderEcoSystemCards = memo(
                           variant='high'
                           showPercentage={true}
                           ecosystem={ecosystem as IEcoSystemType}
+                          threatFilter={threatFilter}
                         />
                       )}
                       {severityStats.MEDIUM?.[ecosystem] > 0 && (
@@ -140,6 +159,7 @@ const RenderEcoSystemCards = memo(
                           variant='medium'
                           showPercentage={true}
                           ecosystem={ecosystem as IEcoSystemType}
+                          threatFilter={threatFilter}
                         />
                       )}
                       {severityStats.LOW?.[ecosystem] > 0 && (
@@ -149,6 +169,7 @@ const RenderEcoSystemCards = memo(
                           variant='low'
                           showPercentage={true}
                           ecosystem={ecosystem as IEcoSystemType}
+                          threatFilter={threatFilter}
                         />
                       )}
                     </span>
@@ -159,11 +180,7 @@ const RenderEcoSystemCards = memo(
                     className='small mt-auto border-top'
                     style={{ color: "#495057" }}
                   >
-                    <span className='small'>
-                      Scanned <strong>{formatRelativeTime(fetchedAt)}</strong>{" "}
-                      for last <strong>{duration}</strong> day
-                      {duration > 1 ? "s" : ""}
-                    </span>
+                    <RelativeTimeDisplay fetchedAt={fetchedAt} duration={duration} />
                   </div>
                 </Card.Body>
               </Card>
@@ -185,7 +202,7 @@ export default function StatsCards({
   totalVulnerabilities,
   resultKey
 }: StatsCardsProps) {
-  const { setThreatFilter, selectedEcosystems } = useAppStore();
+  const { setThreatFilter, selectedEcosystems, threatFilter } = useAppStore();
   const router = useRouter();
 
   const handleClick = () => {
@@ -284,6 +301,7 @@ export default function StatsCards({
                   variant='critical'
                   label='Critical'
                   total={totalVulnerabilities}
+                  threatFilter={threatFilter}
                 />
               )}
 
@@ -294,6 +312,7 @@ export default function StatsCards({
                   variant='high'
                   label='High Severity'
                   total={totalVulnerabilities}
+                  threatFilter={threatFilter}
                 />
               )}
 
@@ -304,6 +323,7 @@ export default function StatsCards({
                   variant='medium'
                   label='Medium Severity'
                   total={totalVulnerabilities}
+                  threatFilter={threatFilter}
                 />
               )}
 
@@ -314,6 +334,7 @@ export default function StatsCards({
                   variant='low'
                   label='Low Severity'
                   total={totalVulnerabilities}
+                  threatFilter={threatFilter}
                 />
               )}
             </Card.Body>
