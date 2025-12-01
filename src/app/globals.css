@@ -638,8 +638,12 @@ main {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+  cursor: pointer;
 }
 
+/* Show overlay when sidebar is open */
+.sidebar-overlay.show,
+.vulnerability-sidebar.open ~ .sidebar-overlay,
 .vulnerability-sidebar.open + .sidebar-overlay {
   opacity: 1;
   visibility: visible;
