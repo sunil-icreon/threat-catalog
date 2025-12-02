@@ -7,12 +7,11 @@ import {
   VulnerabilityFilters
 } from "@/types/vulnerability";
 import { ECOSYSTEM_LIST, ECOSYSTEM_NAME } from "@/utilities/constants";
-import { sortedObjectByKey } from "@/utilities/util";
+import { formatRelativeTime, sortedObjectByKey } from "@/utilities/util";
 import { useRouter } from "next/navigation";
 import { Fragment, memo, useMemo } from "react";
 import { Card, Col, Row } from "react-bootstrap";
 
-import { RelativeTimeDisplay } from "./shared/RelativeTimeDisplay";
 import { SeverityCount } from "./shared/UtilityComponents";
 
 interface StatsCardsProps {
@@ -180,7 +179,17 @@ const RenderEcoSystemCards = memo(
                     className='small mt-auto border-top'
                     style={{ color: "#495057" }}
                   >
-                    <RelativeTimeDisplay fetchedAt={fetchedAt} duration={duration} />
+                    <span className='small'>
+                      Scanned <strong>{formatRelativeTime(fetchedAt)}</strong>{" "}
+                      for{" "}
+                      {duration !== "today" ? (
+                        <>
+                          last <strong>{duration}</strong>
+                        </>
+                      ) : (
+                        `today`
+                      )}
+                    </span>
                   </div>
                 </Card.Body>
               </Card>
