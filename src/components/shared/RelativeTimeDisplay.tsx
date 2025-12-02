@@ -1,5 +1,5 @@
 import { formatRelativeTime } from "@/utilities/util";
-import { useEffect, useState, memo } from "react";
+import { memo, useEffect, useState } from "react";
 
 interface RelativeTimeDisplayProps {
   fetchedAt: string;
@@ -12,31 +12,36 @@ interface RelativeTimeDisplayProps {
  */
 export const RelativeTimeDisplay = memo((props: RelativeTimeDisplayProps) => {
   const { fetchedAt, duration } = props;
-  
+
   // State to force re-render every minute for relative time updates
   const [currentTime, setCurrentTime] = useState(Date.now());
-  
+
   useEffect(() => {
     // Update every minute to refresh relative time display
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
     }, 60000); // 60 seconds = 1 minute
-    
+
     return () => clearInterval(interval);
   }, []);
-  
+
   // Reset timer when fetchedAt changes (new data fetched)
   useEffect(() => {
     setCurrentTime(Date.now());
   }, [fetchedAt]);
-  
+
   return (
     <span className='small'>
-      Scanned <strong>{formatRelativeTime(fetchedAt)}</strong>{" "}
-      for {duration !== 'today' ? <>last <strong>{duration}</strong></> : `today`}
+      Scanned <strong>{formatRelativeTime(fetchedAt, true)}</strong> for{" "}
+      {duration !== "today" ? (
+        <>
+          last <strong>{duration}</strong>
+        </>
+      ) : (
+        `today`
+      )}
     </span>
   );
 });
 
 RelativeTimeDisplay.displayName = "RelativeTimeDisplay";
-
