@@ -45,7 +45,6 @@ import {
   VulnerabilityFilters,
   VulnerabilityResponse
 } from "../types/vulnerability";
-import PackageVulnerabilityMatcher from "./PackageVulnerabilityMatcher";
 
 // Lazy load heavy components
 const VulnerabilityDetailModal = dynamic(
@@ -429,10 +428,10 @@ export const DashboardContent = (props: any) => {
               </div>
 
               {/* Package Vulnerability Matcher - Show matched packages */}
-              <PackageVulnerabilityMatcher
+              {/* <PackageVulnerabilityMatcher
                 vulnerabilities={vulnerabilities}
                 onVulnerabilityClick={handleVulnerabilityClick}
-              />
+              /> */}
 
               {/* Stats Cards */}
               <div className='stats-section' style={{ minHeight: "120px" }}>
