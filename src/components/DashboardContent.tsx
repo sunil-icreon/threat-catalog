@@ -253,6 +253,17 @@ export const DashboardContent = (props: any) => {
     [selectedEcosystems, applyFilters]
   );
 
+  const clearFilters = () => {
+    const clearedFilters = {
+      search: "",
+      ecosystem: "",
+      severity: "",
+      status: ""
+    };
+
+    handleFiltersChange(clearedFilters);
+  };
+
   const handleEcosystemsChange = useCallback(
     (ecosystems: string[]) => {
       setSelectedEcosystems(ecosystems);
@@ -302,6 +313,7 @@ export const DashboardContent = (props: any) => {
   const refreshPage = async () => {
     startTransition(async () => {
       await actionPurgeCache();
+      clearFilters();
       router.refresh();
     });
   };
