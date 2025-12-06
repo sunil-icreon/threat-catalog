@@ -48,7 +48,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net",
               "img-src 'self' data: https:",
-              "connect-src 'self' https://api.github.com https://api.osv.dev",
+              "connect-src 'self' https://api.github.com https://api.osv.dev https://osv.dev https://registry.npmjs.org https://api.nuget.org https://search.maven.org https://mvnrepository.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'"
