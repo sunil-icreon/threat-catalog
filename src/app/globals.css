@@ -1279,6 +1279,12 @@ body.vulnerability-modal-open.modal-open {
   }
 }
 
+.security-advisory {
+  th{
+    width: 100px;
+  }
+}
+
 .advisory-metadata th,
 .package-info th,
 .remediation-info th {
@@ -1523,4 +1529,20 @@ code.vulnerable {
   + .vulnerability-table-container {
   border-top: 1px solid #dee2e6;
   border-radius: 0;
+}
+
+/* Force white background for analyze page on all devices and themes */
+#main-content {
+  background-color: #ffffff !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  #main-content {
+    background-color: #ffffff !important;
+  }
+  
+  /* Ensure analyze page body background is white */
+  body:has(#main-content) {
+    background-color: #ffffff !important;
+  }
 }

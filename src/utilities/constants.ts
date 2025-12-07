@@ -11,7 +11,8 @@ export const STORAGE_KEYS = {
 export const SOURCE_NAME = {
   GHSA: "GHSA (Github Security Advisory)",
   OSV: "OSV (Open Source Vulnerabilities)",
-  Synk: "Synk"
+  Synk: "Synk",
+  NVD: "NVD (National Vulnerability Database)"
 };
 
 export const ECOSYSTEM_NAME: IRecord = {

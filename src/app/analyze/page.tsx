@@ -1,10 +1,40 @@
 "use client";
 import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Container, Row, Col, Form, Button, Alert, Card } from "react-bootstrap";
+import { Container, Row, Col, Alert, Card, Button } from "react-bootstrap";
 import Header from "@/components/Header";
 import PackageAnalysisGrid from "@/components/PackageAnalysisGrid";
 import PackageAnalysisStats from "@/components/PackageAnalysisStats";
+import PackageInputForm from "@/components/analyze/PackageInputForm";
+import VulnerabilityMatchingSection from "@/components/analyze/VulnerabilityMatchingSection";
+import { useVulnerabilityData } from "@/hooks/useVulnerabilityData";
+import { useVulnerabilityMatching } from "@/hooks/useVulnerabilityMatching";
+import { useVulnerabilityDetail } from "@/hooks/useVulnerabilityDetail";
+import dynamic from "next/dynamic";
+
+const VulnerabilityDetailModal = dynamic(
+  () => import("@/components/VulnerabilityDetailModal"),
+  {
+    loading: () => (
+      <div aria-live='polite' aria-busy='true'>
+        Loading modal...
+      </div>
+    ),
+    ssr: false
+  }
+);
+
+const VulnerabilityDetailSidebar = dynamic(
+  () => import("@/components/VulnerabilityDetailSidebar"),
+  {
+    loading: () => (
+      <div aria-live='polite' aria-busy='true'>
+        Loading sidebar...
+      </div>
+    ),
+    ssr: false
+  }
+);
 import {
   PackageAnalysisInput,
   PackageAnalysisResult,
@@ -27,6 +57,18 @@ function AnalyzePageContent() {
   const lastSuccessfulIndexRef = useRef<number>(-1);
   const isPausedRef = useRef<boolean>(false);
   const pauseResumeRef = useRef<{ resolve: () => void } | null>(null);
+
+  // Custom hooks
+  const vulnerabilities = useVulnerabilityData();
+  const matchedPackages = useVulnerabilityMatching(packages, vulnerabilities);
+  const {
+    selectedVulnerability,
+    showSidebar,
+    showMobileModal,
+    handleVulnerabilityClick,
+    handleCloseSidebar,
+    handleCloseMobileModal
+  } = useVulnerabilityDetail();
 
   useEffect(() => {
     const paParam = searchParams.get("pa");
@@ -307,14 +349,15 @@ function AnalyzePageContent() {
     }
   }, []);
 
+
   if (!hasAccess) {
     return null;
   }
 
   return (
-    <>
+    <div style={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
       <Header />
-      <Container fluid className='py-4' id='main-content'>
+      <Container fluid className='py-4' id='main-content' style={{ backgroundColor: '#ffffff' }}>
         <Row>
           <Col>
             <h1 className="mb-4">Package Analysis</h1>
@@ -329,49 +372,25 @@ function AnalyzePageContent() {
               </Alert>
             )}
 
-            <Form.Group className="mb-3">
-              <Form.Label>Package List (Comma-separated)</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={6}
-                value={jsonInput}
-                onChange={handleInputChange}
-                placeholder={`react,18.2.0,npm\nreflect.getprototypeof,1.0.4,npm\nregenerator-runtime,0.14.0,npm`}
-                disabled={isProcessing}
-                style={{ fontFamily: "monospace" }}
-              />
-              <Form.Text className="text-muted">
-                Format: packageName,version,ecoSystem (one package per line). Example: react,18.2.0,npm
-              </Form.Text>
-            </Form.Group>
+            <PackageInputForm
+              jsonInput={jsonInput}
+              packages={packages}
+              isProcessing={isProcessing}
+              isPaused={isPaused}
+              onInputChange={handleInputChange}
+              onStartAnalysis={handleStartAnalysis}
+              onPause={handlePause}
+              onResume={handleResume}
+              onReset={handleReset}
+            />
 
-            <div className="mb-4 d-flex gap-2">
-              <Button
-                variant="primary"
-                onClick={handleStartAnalysis}
-                disabled={isProcessing || packages.length === 0}
-              >
-                {isProcessing ? (isPaused ? "Paused" : "Analyzing...") : "Start Analysis"}
-              </Button>
-              {isProcessing && (
-                <>
-                  {isPaused ? (
-                    <Button variant="success" onClick={handleResume}>
-                      <i className="bi bi-play-fill me-1"></i>
-                      Resume
-                    </Button>
-                  ) : (
-                    <Button variant="warning" onClick={handlePause}>
-                      <i className="bi bi-pause-fill me-1"></i>
-                      Pause
-                    </Button>
-                  )}
-                </>
-              )}
-              <Button variant="secondary" onClick={handleReset} disabled={isProcessing && !isPaused}>
-                Reset
-              </Button>
-            </div>
+            {/* Vulnerability Matching Section */}
+            {packages.length > 0 && matchedPackages.length > 0 && (
+              <VulnerabilityMatchingSection
+                matchedPackages={matchedPackages}
+                onVulnerabilityClick={handleVulnerabilityClick}
+              />
+            )}
 
             {packages.length > 0 && (
               <>
@@ -421,7 +440,25 @@ function AnalyzePageContent() {
           </Col>
         </Row>
       </Container>
-    </>
+
+      {/* Vulnerability Detail Sidebar (Desktop) */}
+      {showSidebar && (
+        <VulnerabilityDetailSidebar
+          vulnerability={selectedVulnerability}
+          isOpen={showSidebar}
+          onClose={handleCloseSidebar}
+        />
+      )}
+
+      {/* Vulnerability Detail Modal (Mobile) */}
+      {showMobileModal && (
+        <VulnerabilityDetailModal
+          vulnerability={selectedVulnerability}
+          isOpen={showMobileModal}
+          onClose={handleCloseMobileModal}
+        />
+      )}
+    </div>
   );
 }
 
