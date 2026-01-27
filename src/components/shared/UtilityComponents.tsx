@@ -198,13 +198,14 @@ export const GetEcosystemOptions = memo(() => {
   ];
 
   const optionList = useMemo(() => {
-    if (!selectedEcosystems || selectedEcosystems.length === 0) {
-      return ECOSYSTEM_LIST;
-    }
+    // if (!selectedEcosystems || selectedEcosystems.length === 0) {
+    //   return ECOSYSTEM_LIST;
+    // }
 
-    return ECOSYSTEM_LIST.filter((ecos: ILabelValueType) =>
-      selectedEcosystems.includes(ecos.value as string)
-    );
+    // return ECOSYSTEM_LIST.filter((ecos: ILabelValueType) =>
+    //   selectedEcosystems.includes(ecos.value as string)
+    // );
+    return ECOSYSTEM_LIST;
   }, [selectedEcosystems]);
 
   return [
