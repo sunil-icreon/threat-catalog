@@ -85,7 +85,7 @@ const RenderEcoSystemCards = memo(
           const isSelected = threatFilter?.ecosystem === ecosystem;
 
           return (
-            <Col md={6} lg={3} key={ecosystem}>
+            <Col md={6} lg={2} key={ecosystem}>
               <Card
                 className={`custom-card stat-card h-100 ${
                   isSelected ? "border-primary border-3 shadow-sm" : ""

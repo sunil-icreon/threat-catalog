@@ -7,6 +7,7 @@ import {
   PackageInfo,
   SEVERITY_TYPE
 } from "@/types/vulnerability";
+import { ECOSYSTEM_TYPE } from "@/utilities/constants";
 
 const VULNERABILITY_TYPE = {
   VULNERABILITY: 1,
@@ -91,7 +92,17 @@ const GHSA_HELPER = {
     const { ecosystem = "NPM" } = filterData;
     const { fromDate, endDate } = getStartEndDates(publishDuration);
 
-    const apiURL = `https://api.github.com/advisories?ecosystem=${ecosystem.toLowerCase()}&per_page=100&published=${fromDate}..${endDate}`;
+    let ecoSystemValue = ecosystem.toLocaleLowerCase();
+
+    switch (ecoSystemValue) {
+      case "pypi":
+        ecoSystemValue = "pip";
+        break;
+      default:
+        ecoSystemValue = ecosystem.toLocaleLowerCase();
+    }
+
+    const apiURL = `https://api.github.com/advisories?ecosystem=${ecoSystemValue}&per_page=100&published=${fromDate}..${endDate}`;
 
     const res = await fetch(apiURL);
 
@@ -178,7 +189,7 @@ const getStartEndDates = (daysBack: number = 7) => {
 };
 
 const OSV_HELPER = {
-  PAGE_NUMBER_SCAN: 1,
+  PAGE_NUMBER_SCAN: 2,
   DETAIL_BATCH_SIZE: 6,
   getFeedsFromPage: (
     document: any,
@@ -392,15 +403,17 @@ const SNYK_HELPER = {
   ): Array<IVulnerabilityType> => {
     let advisories: Array<IVulnerabilityType> = [];
 
-    const table = document.querySelector(".vulns-table");
-    if (!table) {
+    const vulnerabilityList = document.querySelector(".vulnerability-list");
+
+    if (!vulnerabilityList) {
       return advisories;
     }
 
-    const rows = table.querySelectorAll("tbody tr");
-    rows.forEach((tr: any) => {
-      const tds = tr.querySelectorAll("td");
-      if (tds.length < 4) {
+    const vulnerabilityItemList =
+      vulnerabilityList.querySelectorAll(".vuln-item");
+
+    vulnerabilityItemList.forEach((vul: any) => {
+      if (!vul) {
         return;
       }
 
@@ -415,11 +428,42 @@ const SNYK_HELPER = {
         ecosystem: ecoSystem
       };
 
-      // First td: VULNERABILITY column with link
-      const vulnerabilityTd = tds[0];
-      const link = vulnerabilityTd.querySelector("a");
-      if (link) {
-        const href = link.getAttribute("href");
+      const severityElm = vul.querySelector(
+        ".vuln-item__header abbr.severity__text"
+      ); // C,H,M,L
+
+      const sevValue = severityElm?.textContent?.trim();
+      switch (sevValue) {
+        case "C":
+          data.severity = "CRITICAL";
+          break;
+
+        case "H":
+          data.severity = "HIGH";
+          break;
+
+        case "M":
+          data.severity = "MEDIUM";
+          break;
+
+        case "L":
+          data.severity = "LOW";
+          break;
+
+        default:
+          data.severity = sevValue;
+      }
+
+      const summary = vul.querySelector(
+        ".vuln-item__title-group .vuln-item__title"
+      );
+      if (summary) {
+        data.summary = summary?.textContent?.trim();
+        if (data.summary?.toLowerCase().includes("malicious")) {
+          data.type = VULNERABILITY_TYPE.MALWARE;
+        }
+
+        const href = summary?.getAttribute("href");
         if (href) {
           // Extract vulnerability ID from href like /vuln/SNYK-JS-INTEGRATORFILESCRYPT2025-14038379
           const vulnIdMatch = href.match(/\/vuln\/(.+)/);
@@ -428,68 +472,47 @@ const SNYK_HELPER = {
             data.detailURL = `https://security.snyk.io${href}`;
           }
         }
-
-        // Check if it's a malicious package (usually indicated by "Malicious Package" text)
-        const linkText = link.textContent?.trim() || "";
-
-        // Extract overview/description
-        data.summary = linkText;
-        data.description = linkText;
-
-        if (linkText.toLowerCase().includes("malicious")) {
-          data.type = VULNERABILITY_TYPE.MALWARE;
-        }
       }
 
-      // Second td: AFFECTS column with package name
-      const affectsTd = tds[1];
-      if (affectsTd) {
-        const packageLink = affectsTd.querySelector("a");
-        if (packageLink) {
-          const packageText = packageLink.textContent?.trim();
-          if (packageText) {
-            // Handle package names like "react-svg-module*" or "@grumpycoffeecup/hello-npm-world*"
-            const packageName = packageText.replace(/\*$/, "").trim();
-            data.packageName = packageName;
-          }
-        } else {
-          // Fallback to text content
-          const packageText = affectsTd.textContent?.trim();
-          if (packageText) {
-            const packageName = packageText.replace(/\*$/, "").trim();
-            data.packageName = packageName;
-          }
-        }
+      const cve = vul.querySelector(".vuln-item__title-group .vuln-item__cve");
+      if (cve) {
+        data.cveId = cve?.textContent?.trim();
+      }
 
-        const affectedVersions = affectsTd.querySelector(
-          ".vulns-table__semver"
+      const vulDtailElm = vul.querySelector(".vuln-item__details");
+      if (vulDtailElm) {
+        const packageNameElm = vulDtailElm.querySelector(
+          ".vuln-item__package-link"
         );
-        if (affectedVersions) {
-          data.affectedVersions = affectedVersions;
+        if (packageNameElm) {
+          data.packageName = packageNameElm?.textContent?.trim();
+        }
+
+        let affectedVersions = [];
+        const versionElms = vulDtailElm.querySelectorAll(".vuln-item__version");
+        if (versionElms && versionElms.length > 0) {
+          versionElms.forEach((ver: any) => {
+            affectedVersions.push(ver?.textContent?.trim());
+          });
         }
       }
 
-      // Fourth td: PUBLISHED column with date
-      const publishedTd = tds[3];
-      if (publishedTd) {
-        const publishedText = publishedTd.textContent?.trim();
-        data.publishedRelative = publishedText;
-        // Try to extract date if available
-        const timeElement = publishedTd.querySelector("time");
-        if (timeElement) {
-          data.publishedDate =
-            timeElement.getAttribute("datetime") || publishedText;
-        } else {
-          // Try to parse date from text
-          try {
-            const date = new Date(publishedText);
-            if (!isNaN(date.getTime())) {
-              data.publishedDate = date.toISOString();
-            }
-          } catch (e) {
-            // Keep publishedRelative as fallback
-            data.publishedDate = publishedText;
-          }
+      const vulFooterElm = vul.querySelector(".vuln-item__footer");
+      if (vulFooterElm) {
+        const publishedElm = vulFooterElm.querySelector(
+          ".vuln-item__published"
+        );
+
+        if (publishedElm) {
+          const pubDate = publishedElm?.textContent?.trim();
+          data.publishedDate = pubDate?.replace("Published", "").trim();
+        }
+
+        const hasFixElm = vulFooterElm.querySelector(".vuln-item__badge");
+
+        if (hasFixElm) {
+          const pubDate = publishedElm?.textContent?.trim();
+          data.publishedDate = pubDate?.replace("Published", "").trim();
         }
       }
 
@@ -1054,6 +1077,217 @@ const SNYK_HELPER = {
   }
 };
 
+const NVD_HELPER = {
+  vulnerabilityMapper: (
+    response: any,
+    ecoSystem: IEcoSystemType
+  ): Array<IVulnerabilityType> => {
+    let vulnerabilities: Array<IVulnerabilityType> = [];
+
+    if (
+      !response ||
+      !response.vulnerabilities ||
+      !Array.isArray(response.vulnerabilities)
+    ) {
+      return vulnerabilities;
+    }
+
+    response.vulnerabilities.forEach((vul: any) => {
+      const cve = vul.cve;
+      if (!cve) return;
+
+      // Extract CVE ID
+      const cveId = cve.id || "";
+
+      // Extract description
+      const description =
+        cve.descriptions?.find((d: any) => d.lang === "en")?.value ||
+        cve.descriptions?.[0]?.value ||
+        "";
+
+      // Extract published date
+      const publishedDate = cve.published || "";
+
+      // Extract CVSS scores and severity
+      let severity = SEVERITY_TYPE.MEDIUM as ISecerityType;
+      let score: string | undefined;
+      let cvssScore: number | undefined;
+      let cvss_severities: any = {};
+      let score_vector: string | undefined;
+
+      // Try CVSS v3.1 first (Primary)
+      const cvssV31 =
+        cve.metrics?.cvssMetricV31?.find((m: any) => m.type === "Primary") ||
+        cve.metrics?.cvssMetricV31?.[0];
+
+      if (cvssV31?.cvssData) {
+        const cvssData = cvssV31.cvssData;
+        score = cvssData.baseScore?.toString();
+        cvssScore = cvssData.baseScore;
+        const baseSeverity = cvssData.baseSeverity?.toUpperCase();
+        if (baseSeverity) {
+          severity = (baseSeverity as ISecerityType) || SEVERITY_TYPE.MEDIUM;
+        }
+        score_vector = cvssData.vectorString;
+        cvss_severities.cvss_v3_1 = {
+          score: cvssData.baseScore,
+          severity: baseSeverity,
+          vectorString: cvssData.vectorString
+        };
+      }
+
+      // Try CVSS v4.0 if available
+      const cvssV40 =
+        cve.metrics?.cvssMetricV40?.find((m: any) => m.type === "Primary") ||
+        cve.metrics?.cvssMetricV40?.[0];
+
+      if (cvssV40?.cvssData) {
+        const cvssData = cvssV40.cvssData;
+        // Prefer v4.0 if available
+        score = cvssData.baseScore?.toString();
+        cvssScore = cvssData.baseScore;
+        const baseSeverity = cvssData.baseSeverity?.toUpperCase();
+        if (baseSeverity) {
+          severity = (baseSeverity as ISecerityType) || SEVERITY_TYPE.MEDIUM;
+        }
+        score_vector = cvssData.vectorString;
+        cvss_severities.cvss_v4 = {
+          score: cvssData.baseScore,
+          severity: baseSeverity,
+          vectorString: cvssData.vectorString
+        };
+      }
+
+      // Extract weaknesses (CWE)
+      const weaknesses: Array<{ id: string; name: string }> = [];
+      if (cve.weaknesses && Array.isArray(cve.weaknesses)) {
+        cve.weaknesses.forEach((weakness: any) => {
+          if (weakness.description && Array.isArray(weakness.description)) {
+            weakness.description.forEach((desc: any) => {
+              if (desc.lang === "en" && desc.value) {
+                // Extract CWE ID from value (e.g., "CWE-79" or "CWE-99")
+                const cweMatch = desc.value.match(/CWE-(\d+)/i);
+                if (cweMatch) {
+                  const cweId = `CWE-${cweMatch[1]}`;
+                  weaknesses.push({
+                    id: cweId,
+                    name: desc.value
+                  });
+                }
+              }
+            });
+          }
+        });
+      }
+
+      // Extract references
+      const references: string[] = [];
+      if (cve.references && Array.isArray(cve.references)) {
+        cve.references.forEach((ref: any) => {
+          if (ref.url) {
+            references.push(ref.url);
+          }
+        });
+      }
+
+      // NVD doesn't provide direct package info, use CVE ID as packageName
+      // Try to extract package info from CPE if available (future enhancement)
+      const packageName = cveId; // Fallback to CVE ID
+
+      vulnerabilities.push({
+        id: cveId,
+        cveId: cveId,
+        cve_id: cveId,
+        description: description,
+        summary: description,
+        severity: severity,
+        ecosystem: ecoSystem,
+        packageName: packageName,
+        version: "",
+        affectedVersions: [],
+        publishedDate: publishedDate,
+        modifiedDate: cve.lastModified || publishedDate,
+        source: "NVD",
+        detailURL: `https://nvd.nist.gov/vuln/detail/${cveId}`,
+        score: score,
+        cvssScore: cvssScore,
+        score_vector: score_vector,
+        cvss_severities:
+          Object.keys(cvss_severities).length > 0 ? cvss_severities : undefined,
+        weaknesses: weaknesses.length > 0 ? weaknesses : undefined,
+        references: references.length > 0 ? references : undefined
+      });
+    });
+
+    return vulnerabilities;
+  },
+  fetchNVDAdvisories: async (
+    publishDuration: number,
+    filterData: ILatestQueryFilterType
+  ): Promise<Array<IVulnerabilityType>> => {
+    const { fromDate, endDate } = getStartEndDates(publishDuration);
+
+    // Format dates as ISO 8601 strings for NVD API
+    const pubStartDate = new Date(fromDate).toISOString();
+    const pubEndDate = new Date(endDate + "T23:59:59.999Z").toISOString();
+
+    const baseUrl = "https://services.nvd.nist.gov/rest/json/cves/2.0";
+    const url = `${baseUrl}?pubStartDate=${encodeURIComponent(pubStartDate)}&pubEndDate=${encodeURIComponent(pubEndDate)}`;
+
+    let allVulnerabilities: Array<IVulnerabilityType> = [];
+    let startIndex = 0;
+    const resultsPerPage = 2000; // NVD API default
+
+    try {
+      // Handle pagination
+      while (true) {
+        const paginatedUrl = `${url}&startIndex=${startIndex}&resultsPerPage=${resultsPerPage}`;
+
+        const res = await fetch(paginatedUrl);
+
+        if (!res.ok) {
+          console.warn(
+            `NVD API request failed: ${res.status} ${res.statusText}`
+          );
+          break;
+        }
+
+        const response = await res.json();
+
+        if (!response || !response.vulnerabilities) {
+          break;
+        }
+
+        // Map vulnerabilities
+        const { ecosystem = "NPM" } = filterData;
+        const mappedVuls = NVD_HELPER.vulnerabilityMapper(
+          response,
+          ecosystem as IEcoSystemType
+        );
+
+        allVulnerabilities = [...allVulnerabilities, ...mappedVuls];
+
+        // Check if there are more results
+        const totalResults = response.totalResults || 0;
+        const currentResults = response.resultsPerPage || 0;
+
+        if (startIndex + currentResults >= totalResults) {
+          break;
+        }
+
+        startIndex += currentResults;
+
+        // Add a small delay to respect rate limits
+        await sleep(200);
+      }
+    } catch (error) {
+      console.error("Error fetching NVD advisories:", error);
+    }
+
+    return allVulnerabilities;
+  }
+};
+
 const fetchHTMLDocument = async (url: string, apiHeaders: any = {}) => {
   const res = await fetch(url, apiHeaders);
 
@@ -1092,14 +1326,27 @@ const fetchOSV = async (
   existingResult: Array<IVulnerabilityType>
 ) => {
   let { ecosystem = "NPM" } = filterData;
-
   let urls: Array<string> = [];
+
+  let ecoSystemValue: string = ecosystem;
+
+  switch (ecosystem) {
+    case ECOSYSTEM_TYPE.MAVEN:
+      ecoSystemValue = "Maven";
+      break;
+    case ECOSYSTEM_TYPE.NUGET:
+      ecoSystemValue = "Nuget";
+      break;
+    case ECOSYSTEM_TYPE.PYPI:
+      ecoSystemValue = "PyPI";
+      break;
+    default:
+      ecoSystemValue = "npm";
+  }
 
   const apiHeaders = OSV_HELPER.apiHeaders();
   for (let page = 1; page <= OSV_HELPER.PAGE_NUMBER_SCAN; page++) {
-    urls.push(
-      `https://osv.dev/list?page=${page}&ecosystem=${ecosystem.toLocaleLowerCase()}`
-    );
+    urls.push(`https://osv.dev/list?page=${page}&ecosystem=${ecoSystemValue}`);
   }
 
   const results = await fetchParallel(urls, apiHeaders);
@@ -1131,15 +1378,23 @@ const fetchSnyk = async (
 ) => {
   let { ecosystem = "NPM" } = filterData;
 
-  // Only fetch for npm ecosystem from Snyk
-  if (ecosystem.toLocaleLowerCase() !== "npm") {
-    return [];
+  let ecoSystemValue = ecosystem.toLocaleLowerCase();
+
+  switch (ecoSystemValue) {
+    case "pypi":
+      ecoSystemValue = "pip";
+      break;
+    default:
+      ecoSystemValue = ecosystem.toLocaleLowerCase();
   }
+
+  console.log("ecoSystemValue", ecoSystemValue);
+  const ecoSystemSearchValue = ecosystem.toLocaleLowerCase();
 
   // Fetch both pages in parallel
   const urls: Array<string> = [
-    `https://security.snyk.io/vuln/${ecosystem.toLocaleLowerCase()}`,
-    `https://security.snyk.io/vuln/${ecosystem.toLocaleLowerCase()}/2`
+    `https://security.snyk.io/vuln/${ecoSystemSearchValue}?tab=vulnerabilities`,
+    `https://security.snyk.io/vuln/${ecoSystemSearchValue}/2?tab=vulnerabilities`
   ];
 
   const apiHeaders = SNYK_HELPER.apiHeaders();
@@ -1173,6 +1428,39 @@ const fetchSnyk = async (
   diffVul = await SNYK_HELPER.getVulnerabilityDetail(diffVul);
 
   return diffVul;
+};
+
+const fetchNVD = async (
+  filterData: ILatestQueryFilterType,
+  publishDuration: number,
+  existingResult: Array<IVulnerabilityType>
+) => {
+  try {
+    // Fetch NVD advisories
+    const feedList = await NVD_HELPER.fetchNVDAdvisories(
+      publishDuration,
+      filterData
+    );
+
+    // Filter by date if publishedDate is available
+    const filteredFeedList = feedList.filter((f: IVulnerabilityType) => {
+      if (!f.publishedDate) {
+        return true; // Include if no date available
+      }
+      return isWithinDays(f.publishedDate, publishDuration);
+    });
+
+    // Remove duplicates with existing results
+    const existingIds = existingResult.map((ex: IVulnerabilityType) => ex.id);
+    const diffVul = filteredFeedList.filter(
+      (feed: IVulnerabilityType) => !existingIds.includes(feed.id)
+    );
+
+    return diffVul;
+  } catch (error) {
+    console.error("Error in fetchNVD:", error);
+    return [];
+  }
 };
 
 const deduplicate = (results: any[]) => {
@@ -1217,13 +1505,20 @@ export const fetchRSSFeeds = async (filterData: {
 
     allResults = [...allResults, ...osvResults];
 
-    const snykResults = await fetchSnyk(
-      filterData,
-      publishDuration,
-      allResults
-    );
+    try {
+      const snykResults = await fetchSnyk(
+        filterData,
+        publishDuration,
+        allResults
+      );
 
-    allResults = [...allResults, ...snykResults];
+      allResults = [...allResults, ...snykResults];
+    } catch (e) {
+      console.log("SNYK API Failed", e);
+    }
+
+    // const nvdResults = await fetchNVD(filterData, publishDuration, allResults);
+    // allResults = [...allResults, ...nvdResults];
 
     const merged: Array<IVulnerabilityType> = deduplicate(allResults);
 

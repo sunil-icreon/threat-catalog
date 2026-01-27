@@ -240,10 +240,13 @@ export const sortedObjectByKey = (
     order === "ASC"
       ? Object.keys(obj).sort()
       : Object.keys(obj).sort((a, b) => b.localeCompare(a));
-  return sortedKeys.reduce((acc, key) => {
-    acc[key] = obj[key as keyof typeof obj];
-    return acc;
-  }, {} as Record<string, number>);
+  return sortedKeys.reduce(
+    (acc, key) => {
+      acc[key] = obj[key as keyof typeof obj];
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 };
 
 // Calculate stats from vulnerabilities array
@@ -323,6 +326,14 @@ export const getPackageURL = (
 
     case "nuget":
       packageURL = `https://www.nuget.org/packages/${packageName}`;
+      if (version) {
+        return `${packageURL}/${version}`;
+      }
+
+      return packageURL;
+
+    case "pypi":
+      packageURL = `https://pypi.org/project/${packageName}`;
       if (version) {
         return `${packageURL}/${version}`;
       }

@@ -18,13 +18,21 @@ export const SOURCE_NAME = {
 export const ECOSYSTEM_NAME: IRecord = {
   npm: "NPM",
   maven: "Maven",
-  nuget: "NuGet"
+  nuget: "NuGet",
+  pypi: "PyPI"
 };
 
 export const ECOSYSTEM_COLOR: IRecord = {
   npm: "low",
   maven: "green",
   nuget: "high"
+};
+
+export const ECOSYSTEM_TYPE = {
+  NPM: "NPM",
+  MAVEN: "MAVEN",
+  NUGET: "NUGET",
+  PYPI: "PYPI"
 };
 
 export const ECOSYSTEM_LIST = [
@@ -39,5 +47,9 @@ export const ECOSYSTEM_LIST = [
   {
     label: "Nuget",
     value: "nuget"
+  },
+  {
+    label: "PyPI",
+    value: "pypi"
   }
 ];

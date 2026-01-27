@@ -29,7 +29,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   threatFilter: {},
-  selectedEcosystems: ["npm", "maven", "nuget"],
+  selectedEcosystems: ["npm", "maven", "nuget", "pypi"],
   submittedProjectVuls: [],
   setThreatFilter: (filter: VulnerabilityFilters) =>
     set(() => ({ threatFilter: filter })),
